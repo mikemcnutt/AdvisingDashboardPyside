@@ -288,6 +288,7 @@ class GlassButton(QPushButton):
         super().__init__(text, parent)
         
         self.glow_color = glow_color or COLORS['button_bg']
+        self.is_hovering = False
         
         self.setMinimumHeight(44)
         self.setMinimumWidth(130)
@@ -295,15 +296,10 @@ class GlassButton(QPushButton):
         self.setFont(QFont("Segoe UI", 11, QFont.Bold))
         
         self._update_style(False)
-        
-        # Purple glow shadow
-        self.shadow = QGraphicsDropShadowEffect()
-        self.shadow.setBlurRadius(25)
-        self.shadow.setColor(QColor(COLORS['glass_shadow']))
-        self.shadow.setOffset(0, 0)
-        self.setGraphicsEffect(self.shadow)
     
     def _update_style(self, hovering):
+        self.is_hovering = hovering
+        
         if hovering:
             self.setStyleSheet(f"""
                 QPushButton {{
@@ -315,9 +311,12 @@ class GlassButton(QPushButton):
                     font-weight: bold;
                 }}
             """)
-            if self.shadow:
-                self.shadow.setBlurRadius(35)
-                self.shadow.setColor(QColor(COLORS['accent_purple']))
+            # Create stronger purple glow on hover
+            shadow = QGraphicsDropShadowEffect()
+            shadow.setBlurRadius(35)
+            shadow.setColor(QColor(COLORS['accent_purple']))
+            shadow.setOffset(0, 0)
+            self.setGraphicsEffect(shadow)
         else:
             self.setStyleSheet(f"""
                 QPushButton {{
@@ -329,9 +328,12 @@ class GlassButton(QPushButton):
                     font-weight: bold;
                 }}
             """)
-            if self.shadow:
-                self.shadow.setBlurRadius(25)
-                self.shadow.setColor(QColor(COLORS['glass_shadow']))
+            # Create normal purple glow
+            shadow = QGraphicsDropShadowEffect()
+            shadow.setBlurRadius(25)
+            shadow.setColor(QColor(COLORS['glass_shadow']))
+            shadow.setOffset(0, 0)
+            self.setGraphicsEffect(shadow)
     
     def enterEvent(self, event):
         self._update_style(True)
