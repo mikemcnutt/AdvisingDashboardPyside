@@ -605,7 +605,8 @@ class AdvisingDashboard(QMainWindow):
         self.needs_checks: Dict[str, QCheckBox] = {}
         
         # Settings
-        settings = load_settings()
+        self.settings = load_settings()
+        settings = self.settings
         self.current_year = settings.get("last_year", "2026")
         self.spring_enabled = settings.get("last_spring", False)
         self.summer_enabled = settings.get("last_summer", True)
@@ -824,7 +825,7 @@ class AdvisingDashboard(QMainWindow):
             "<p>Please schedule your appointment at your earliest convenience.</p>"
             "<p>Thank you!</p>"
         )
-        saved_body = settings.get("email_body", default_body)
+        saved_body = self.settings.get("email_body", default_body)
         self.email_body.setPlainText(saved_body)
         
         body_widget.layout().addWidget(self.email_body)
