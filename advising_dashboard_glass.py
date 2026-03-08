@@ -43,9 +43,9 @@ HEADER_TEXT = "One Dashboard To Rule Them All"
 COLORS = {
     # Backgrounds - black edges with blended midnight blue and deep violet core
     'bg_gradient_1': '#02030a',
-    'bg_gradient_2': '#08152d',
-    'bg_gradient_3': '#1b1d4a',
-    'bg_gradient_4': '#090413',
+    'bg_gradient_2': '#040812',
+    'bg_gradient_3': '#090f20',
+    'bg_gradient_4': '#020307',
     
     # Glass effects - equal blue/purple glow mix
     'glass_bg': 'rgba(82, 103, 255, 0.11)',
@@ -54,7 +54,7 @@ COLORS = {
     'glass_shadow': 'rgba(6, 8, 25, 0.78)',
     
     # Card backgrounds - dark frosted indigo glass
-    'card_bg': 'rgba(11, 14, 39, 0.38)',
+    'card_bg': 'rgba(4, 6, 16, 0.78)',
     'card_hover': 'rgba(35, 32, 90, 0.50)',
     
     # Text
@@ -463,11 +463,12 @@ class StudentCard(QFrame):
             notes_label.setFont(QFont("Segoe UI", 9, QFont.Bold))
             notes_label.setStyleSheet(f"""
                 QLabel {{
-                    background-color: rgba(255, 200, 100, 0.3);
+                    background-color: {COLORS['button_bg']};
                     color: {COLORS['text_primary']};
-                    padding: 6px 10px;
-                    border-radius: 8px;
-                    border: 1px solid rgba(255, 200, 100, 0.5);
+                    padding: 6px 14px;
+                    border-radius: 16px;
+                    border: 2px solid {COLORS['button_border']};
+                    font-weight: bold;
                 }}
             """)
             top_row.addWidget(notes_label)
@@ -501,8 +502,11 @@ class StudentCard(QFrame):
         badges_label.setFont(QFont("Segoe UI", 9, QFont.Bold))
         badges_label.setStyleSheet(f"""
             QLabel {{
-                color: {COLORS['text_primary']};
-                background: transparent;
+                color: {COLORS['text_secondary']};
+                background-color: rgba(0, 0, 0, 0.38);
+                border: 1px solid rgba(138, 154, 255, 0.18);
+                border-radius: 8px;
+                padding: 6px 8px;
             }}
         """)
         
@@ -1005,18 +1009,33 @@ class AdvisingDashboard(QMainWindow):
             }}
 
             QLineEdit, QComboBox, QTextEdit {{
-                background-color: rgba(8, 10, 28, 0.70);
-                color: {COLORS['text_primary']};
-                border: 1px solid rgba(138, 154, 255, 0.35);
+                background-color: rgba(255, 255, 255, 0.97);
+                color: #171b34;
+                border: 1px solid rgba(138, 154, 255, 0.45);
                 border-radius: 16px;
                 padding: 12px 14px;
-                selection-background-color: rgba(99, 102, 241, 0.55);
+                selection-background-color: rgba(99, 102, 241, 0.25);
+                selection-color: #171b34;
                 font-size: 14px;
             }}
 
+            QLineEdit::placeholder, QTextEdit[placeholderText="true"] {{
+                color: #5f6b96;
+            }}
+
             QLineEdit:focus, QComboBox:focus, QTextEdit:focus {{
-                border: 1px solid rgba(126, 165, 255, 0.75);
-                background-color: rgba(10, 14, 36, 0.82);
+                border: 1px solid rgba(126, 165, 255, 0.85);
+                background-color: rgba(255, 255, 255, 1.0);
+                color: #12162b;
+            }}
+
+            QToolTip {{
+                background-color: rgba(10, 12, 24, 0.96);
+                color: #f8fbff;
+                border: 1px solid rgba(138, 154, 255, 0.65);
+                padding: 8px 10px;
+                border-radius: 8px;
+                font-size: 12px;
             }}
 
             QComboBox::drop-down {{
