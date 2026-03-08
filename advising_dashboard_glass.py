@@ -20,7 +20,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QLineEdit, QComboBox, QCheckBox, QScrollArea,
-    QFrame, QSizePolicy, QMessageBox, QFileDialog, QGridLayout, QGraphicsDropShadowEffect
+    QFrame, QSizePolicy, QMessageBox, QFileDialog, QGridLayout, QGraphicsDropShadowEffect,
+    QTextEdit
 )
 from PySide6.QtCore import Qt, QTimer, Signal, QSize, QRect, QPropertyAnimation, QEasingCurve, Property, QByteArray
 from PySide6.QtGui import (
@@ -37,38 +38,43 @@ except Exception:
 APP_TITLE = "Advising Dashboard"
 HEADER_TEXT = "One Dashboard To Rule Them All"
 
-# Glassmorphism color palette - enhanced readability with gradient
+# Glassmorphism color palette - dark purple/blue with glowing accents
 COLORS = {
-    # Backgrounds - beautiful gradient
-    'bg_gradient_1': '#1a4d6d',     # Deep ocean blue
-    'bg_gradient_2': '#2d5f7e',     # Medium blue
-    'bg_gradient_3': '#3d7a9f',     # Lighter blue
-    'bg_gradient_4': '#4a8db3',     # Bright blue
+    # Backgrounds - deep purple to blue gradient
+    'bg_gradient_1': '#0a0a1f',     # Very dark purple-black
+    'bg_gradient_2': '#1a0d33',     # Deep purple
+    'bg_gradient_3': '#2d1b4e',     # Medium purple
+    'bg_gradient_4': '#1e1640',     # Dark blue-purple
     
-    # Glass effects - more visible
-    'glass_bg': 'rgba(255, 255, 255, 0.18)',  # Brighter translucent
-    'glass_border': 'rgba(255, 255, 255, 0.4)', # More visible border
-    'glass_glow': 'rgba(255, 255, 255, 0.6)',   # Bright glow
-    'glass_shadow': 'rgba(0, 0, 0, 0.25)',       # Darker shadow
+    # Glass effects - purple tinted
+    'glass_bg': 'rgba(100, 80, 180, 0.15)',      # Purple-tinted glass
+    'glass_border': 'rgba(147, 112, 219, 0.4)',  # Purple border
+    'glass_glow': 'rgba(147, 112, 219, 0.6)',    # Bright purple glow
+    'glass_shadow': 'rgba(88, 28, 135, 0.5)',    # Purple shadow
     
-    # Card backgrounds - lighter for better text contrast
-    'card_bg': 'rgba(255, 255, 255, 0.22)',
-    'card_hover': 'rgba(255, 255, 255, 0.28)',
+    # Card backgrounds - purple tinted glass
+    'card_bg': 'rgba(75, 60, 150, 0.18)',
+    'card_hover': 'rgba(100, 80, 180, 0.25)',
     
-    # Text - high contrast for readability
-    'text_primary': '#ffffff',       # Pure white
-    'text_secondary': '#f0f4f8',     # Very light
-    'text_muted': '#d1e3f0',         # Light blue-white
-    'text_dark': '#1a2332',          # Dark for light backgrounds
+    # Text - bright for dark background
+    'text_primary': '#ffffff',
+    'text_secondary': '#e9d5ff',     # Light purple
+    'text_muted': '#c4b5fd',         # Medium purple
     
-    # Status colors - high contrast
-    'status_needed': 'rgba(255, 100, 120, 0.9)',   # Bright red
-    'status_partial': 'rgba(255, 200, 80, 0.9)',   # Bright gold
-    'status_complete': 'rgba(100, 255, 150, 0.9)', # Bright green
+    # Accent colors - vibrant glowing
+    'accent_purple': '#a78bfa',      # Bright purple
+    'accent_blue': '#818cf8',        # Bright blue
+    'accent_pink': '#f472b6',        # Bright pink
+    
+    # Status colors - neon glow
+    'status_needed': '#f472b6',      # Bright pink
+    'status_partial': '#fbbf24',     # Bright yellow
+    'status_complete': '#34d399',    # Bright green
     
     # Button colors
-    'button_bg': 'rgba(255, 255, 255, 0.25)',
-    'button_hover': 'rgba(255, 255, 255, 0.35)',
+    'button_bg': 'rgba(139, 92, 246, 0.3)',
+    'button_hover': 'rgba(139, 92, 246, 0.5)',
+    'button_border': 'rgba(167, 139, 250, 0.6)',
 }
 
 TRACK_LABELS = {
@@ -252,14 +258,14 @@ def send_outlook_emails(subject: str, body_html: str, recipients: List[str], dra
 
 
 class GlassCard(QFrame):
-    """Glassmorphism card with translucent background and soft border"""
+    """Glassmorphism card with translucent background and purple glow"""
     def __init__(self, parent=None, glow_color=None, border_width=2):
         super().__init__(parent)
         
         self.glow_color = glow_color or COLORS['glass_border']
         self.border_width = border_width
         
-        # Brighter frosted glass for better text visibility
+        # Purple-tinted frosted glass
         self.setStyleSheet(f"""
             QFrame {{
                 background-color: {COLORS['card_bg']};
@@ -268,16 +274,16 @@ class GlassCard(QFrame):
             }}
         """)
         
-        # Stronger shadow for depth
+        # Purple glow shadow
         shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(25)
-        shadow.setColor(QColor(0, 0, 0, 80))
-        shadow.setOffset(0, 5)
+        shadow.setBlurRadius(30)
+        shadow.setColor(QColor(COLORS['glass_shadow']))
+        shadow.setOffset(0, 0)
         self.setGraphicsEffect(shadow)
 
 
 class GlassButton(QPushButton):
-    """Glassmorphism button with soft glow"""
+    """Glassmorphism button with purple glow"""
     def __init__(self, text, glow_color=None, parent=None):
         super().__init__(text, parent)
         
@@ -290,11 +296,11 @@ class GlassButton(QPushButton):
         
         self._update_style(False)
         
-        # Stronger shadow for depth
+        # Purple glow shadow
         self.shadow = QGraphicsDropShadowEffect()
-        self.shadow.setBlurRadius(20)
-        self.shadow.setColor(QColor(0, 0, 0, 60))
-        self.shadow.setOffset(0, 3)
+        self.shadow.setBlurRadius(25)
+        self.shadow.setColor(QColor(COLORS['glass_shadow']))
+        self.shadow.setOffset(0, 0)
         self.setGraphicsEffect(self.shadow)
     
     def _update_style(self, hovering):
@@ -303,23 +309,29 @@ class GlassButton(QPushButton):
                 QPushButton {{
                     background-color: {COLORS['button_hover']};
                     color: {COLORS['text_primary']};
-                    border: 2px solid {COLORS['glass_glow']};
+                    border: 2px solid {COLORS['accent_purple']};
                     border-radius: 22px;
                     padding: 10px 28px;
                     font-weight: bold;
                 }}
             """)
+            if self.shadow:
+                self.shadow.setBlurRadius(35)
+                self.shadow.setColor(QColor(COLORS['accent_purple']))
         else:
             self.setStyleSheet(f"""
                 QPushButton {{
                     background-color: {COLORS['button_bg']};
                     color: {COLORS['text_primary']};
-                    border: 2px solid {COLORS['glass_border']};
+                    border: 2px solid {COLORS['button_border']};
                     border-radius: 22px;
                     padding: 10px 28px;
                     font-weight: bold;
                 }}
             """)
+            if self.shadow:
+                self.shadow.setBlurRadius(25)
+                self.shadow.setColor(QColor(COLORS['glass_shadow']))
     
     def enterEvent(self, event):
         self._update_style(True)
@@ -656,7 +668,7 @@ class AdvisingDashboard(QMainWindow):
         layout.setAlignment(Qt.AlignCenter)
         layout.setSpacing(8)
         
-        # Main title with strong shadow for readability
+        # Main title with purple glow
         title = QLabel(HEADER_TEXT)
         title.setFont(QFont("Segoe UI", 36, QFont.Bold))
         title.setStyleSheet(f"""
@@ -667,34 +679,14 @@ class AdvisingDashboard(QMainWindow):
         """)
         title.setAlignment(Qt.AlignCenter)
         
-        # Add strong text shadow effect for readability
+        # Add purple glow effect
         title_shadow = QGraphicsDropShadowEffect()
-        title_shadow.setBlurRadius(40)
-        title_shadow.setColor(QColor(0, 0, 0, 180))
-        title_shadow.setOffset(0, 2)
+        title_shadow.setBlurRadius(50)
+        title_shadow.setColor(QColor(COLORS['accent_purple']))
+        title_shadow.setOffset(0, 0)
         title.setGraphicsEffect(title_shadow)
         
         layout.addWidget(title)
-        
-        # Subtitle with shadow
-        subtitle = QLabel("Advanced Student Management System")
-        subtitle.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        subtitle.setStyleSheet(f"""
-            QLabel {{
-                color: {COLORS['text_primary']};
-                background: transparent;
-            }}
-        """)
-        subtitle.setAlignment(Qt.AlignCenter)
-        
-        # Add text shadow
-        subtitle_shadow = QGraphicsDropShadowEffect()
-        subtitle_shadow.setBlurRadius(20)
-        subtitle_shadow.setColor(QColor(0, 0, 0, 150))
-        subtitle_shadow.setOffset(0, 1)
-        subtitle.setGraphicsEffect(subtitle_shadow)
-        
-        layout.addWidget(subtitle)
         
         parent_layout.addWidget(header_card)
     
@@ -820,6 +812,26 @@ class AdvisingDashboard(QMainWindow):
         
         layout.addLayout(email_row)
         
+        # Email body text area
+        body_widget = self._create_control_group("Email Body (supports HTML)")
+        self.email_body = QTextEdit()
+        self.email_body.setPlaceholderText("Write your email message here... Use {term} to insert the semester/year.")
+        self.email_body.setMinimumHeight(100)
+        self.email_body.setMaximumHeight(150)
+        
+        # Load saved body or use default
+        default_body = (
+            "<p>Hello,</p>"
+            "<p>This is a reminder that you need to complete your advising appointment for {term}.</p>"
+            "<p>Please schedule your appointment at your earliest convenience.</p>"
+            "<p>Thank you!</p>"
+        )
+        saved_body = settings.get("email_body", default_body)
+        self.email_body.setPlainText(saved_body)
+        
+        body_widget.layout().addWidget(self.email_body)
+        layout.addWidget(body_widget)
+        
         parent_layout.addWidget(panel)
     
     def _create_control_group(self, label_text):
@@ -940,7 +952,7 @@ class AdvisingDashboard(QMainWindow):
         return scroll
     
     def _apply_styles(self):
-        # Global stylesheet with beautiful gradient and high contrast
+        # Global stylesheet with dark purple/blue theme
         self.setStyleSheet(f"""
             QMainWindow {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
@@ -970,14 +982,30 @@ class AdvisingDashboard(QMainWindow):
                 padding: 10px 16px;
                 font-size: 11pt;
                 font-weight: 500;
-                selection-background-color: rgba(255, 255, 255, 0.4);
+                selection-background-color: {COLORS['accent_purple']};
             }}
             QLineEdit:focus {{
-                border-color: {COLORS['glass_glow']};
-                background-color: rgba(255, 255, 255, 0.28);
+                border-color: {COLORS['accent_purple']};
+                background-color: {COLORS['card_hover']};
+                box-shadow: 0 0 20px {COLORS['glass_glow']};
             }}
             QLineEdit::placeholder {{
                 color: {COLORS['text_muted']};
+            }}
+            
+            QTextEdit {{
+                background-color: {COLORS['card_bg']};
+                color: {COLORS['text_primary']};
+                border: 2px solid {COLORS['glass_border']};
+                border-radius: 12px;
+                padding: 12px;
+                font-size: 11pt;
+                font-weight: 500;
+                selection-background-color: {COLORS['accent_purple']};
+            }}
+            QTextEdit:focus {{
+                border-color: {COLORS['accent_purple']};
+                background-color: {COLORS['card_hover']};
             }}
             
             QComboBox {{
@@ -991,8 +1019,8 @@ class AdvisingDashboard(QMainWindow):
                 min-height: 28px;
             }}
             QComboBox:hover {{
-                border-color: {COLORS['glass_glow']};
-                background-color: rgba(255, 255, 255, 0.28);
+                border-color: {COLORS['accent_purple']};
+                background-color: {COLORS['card_hover']};
             }}
             QComboBox::drop-down {{
                 border: none;
@@ -1003,9 +1031,9 @@ class AdvisingDashboard(QMainWindow):
                 border: none;
             }}
             QComboBox QAbstractItemView {{
-                background-color: rgba(30, 70, 100, 0.95);
+                background-color: rgba(30, 20, 60, 0.95);
                 color: {COLORS['text_primary']};
-                selection-background-color: rgba(255, 255, 255, 0.3);
+                selection-background-color: {COLORS['accent_purple']};
                 border: 2px solid {COLORS['glass_border']};
                 border-radius: 10px;
                 padding: 5px;
@@ -1024,15 +1052,15 @@ class AdvisingDashboard(QMainWindow):
                 height: 24px;
                 border-radius: 8px;
                 border: 2px solid {COLORS['glass_border']};
-                background-color: rgba(255, 255, 255, 0.15);
+                background-color: {COLORS['card_bg']};
             }}
             QCheckBox::indicator:checked {{
-                background-color: rgba(255, 255, 255, 0.45);
-                border-color: {COLORS['glass_glow']};
+                background-color: {COLORS['accent_purple']};
+                border-color: {COLORS['accent_purple']};
             }}
             QCheckBox::indicator:hover {{
-                border-color: {COLORS['glass_glow']};
-                background-color: rgba(255, 255, 255, 0.25);
+                border-color: {COLORS['accent_purple']};
+                background-color: {COLORS['card_hover']};
             }}
             
             QLabel {{
@@ -1045,18 +1073,18 @@ class AdvisingDashboard(QMainWindow):
             }}
             
             QScrollBar:vertical {{
-                background-color: rgba(255, 255, 255, 0.1);
+                background-color: rgba(100, 80, 180, 0.1);
                 width: 12px;
                 border-radius: 6px;
                 margin: 0px;
             }}
             QScrollBar::handle:vertical {{
-                background-color: rgba(255, 255, 255, 0.35);
+                background-color: {COLORS['accent_purple']};
                 border-radius: 6px;
                 min-height: 30px;
             }}
             QScrollBar::handle:vertical:hover {{
-                background-color: rgba(255, 255, 255, 0.5);
+                background-color: {COLORS['accent_blue']};
             }}
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 height: 0px;
@@ -1380,18 +1408,17 @@ class AdvisingDashboard(QMainWindow):
     
     def _build_email_body(self) -> str:
         term = self._term_label()
-        msg = (
-            f"<p>Hello,</p>"
-            f"<p>This is a reminder that you need to complete your advising appointment for "
-            f"{html.escape(term)}.</p>"
-        )
+        body_template = self.email_body.toPlainText()
+        
+        # Replace {term} placeholder with actual term
+        body = body_template.replace("{term}", term).replace("{TERM}", term)
+        
+        # Add scheduling link if provided
         link = self.link_entry.text().strip()
-        if link:
-            msg += f'<p>Please schedule your appointment here: <a href="{html.escape(link)}">{html.escape(link)}</a></p>'
-        else:
-            msg += "<p>Please schedule your appointment at your earliest convenience.</p>"
-        msg += "<p>Thank you!</p>"
-        return msg
+        if link and "scheduling" not in body.lower():
+            body += f'<p>Schedule here: <a href="{html.escape(link)}">{html.escape(link)}</a></p>'
+        
+        return body
     
     def closeEvent(self, event):
         settings = {
@@ -1403,6 +1430,7 @@ class AdvisingDashboard(QMainWindow):
             "last_track_filter": self.track_combo.currentText(),
             "subject": self.subject_entry.text(),
             "schedulingLink": self.link_entry.text(),
+            "email_body": self.email_body.toPlainText(),
             "window_geometry": self.saveGeometry().toBase64().data().decode(),
             "window_state": "maximized" if self.isMaximized() else "normal"
         }
