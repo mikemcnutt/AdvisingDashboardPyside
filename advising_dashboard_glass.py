@@ -114,6 +114,32 @@ def save_settings(settings: dict):
         pass
 
 
+def html_to_plain_text(value: str) -> str:
+    """Convert any saved HTML-ish template content into readable plain text."""
+    if not value:
+        return ""
+    text = str(value)
+    if "<" in text and ">" in text:
+        text = re.sub(r"(?i)<\s*br\s*/?\s*>", "\n", text)
+        text = re.sub(r"(?i)</\s*p\s*>", "\n\n", text)
+        text = re.sub(r"(?i)<\s*p[^>]*>", "", text)
+        text = re.sub(r"(?i)</\s*div\s*>", "\n", text)
+        text = re.sub(r"(?i)<\s*div[^>]*>", "", text)
+        text = re.sub(r"(?i)</\s*li\s*>", "\n", text)
+        text = re.sub(r"(?i)<\s*li[^>]*>", "- ", text)
+        text = re.sub(r"(?i)<[^>]+>", "", text)
+        text = html.unescape(text)
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def track_filter_value(snapshot: "SnapshotInfo") -> str:
+    if not snapshot:
+        return ""
+    return (snapshot.track_name or snapshot.track or "").strip()
+
+
 @dataclass
 class SnapshotInfo:
     file_path: Path
@@ -780,6 +806,10 @@ class AdvisingDashboard(QMainWindow):
         self.track_combo.addItem("All Tracks")
         self.track_combo.setCurrentText(self.track_filter)
         self.track_combo.currentTextChanged.connect(self._on_filter_changed)
+        self.year_combo.currentTextChanged.connect(self._populate_lists)
+        self.spring_check.toggled.connect(self._populate_lists)
+        self.summer_check.toggled.connect(self._populate_lists)
+        self.fall_check.toggled.connect(self._populate_lists)
         track_widget.layout().addWidget(self.track_combo)
         top_row.addWidget(track_widget, 1)
 
@@ -847,6 +877,16 @@ class AdvisingDashboard(QMainWindow):
         layout.addWidget(body_widget)
 
         parent_layout.addWidget(panel)
+
+
+    def _quick_pair(self):
+        """Quick-select Summer + Fall terms and refresh the filtered view."""
+        self.spring_check.setChecked(False)
+        self.summer_check.setChecked(True)
+        self.fall_check.setChecked(True)
+        if hasattr(self, "status_label"):
+            self.status_label.setText("Quick pair applied: Summer and Fall")
+        self._refresh_columns()
 
     def _create_control_group(self, label_text):
         """Create a labeled control group"""
@@ -1208,7 +1248,11 @@ class AdvisingDashboard(QMainWindow):
     def _on_filter_changed(self):
         self._populate_lists()
     
+    def _refresh_columns(self):
+        self._populate_lists()
+
     def _populate_lists(self):
+        self.needs_checks = {}
         # Clear existing
         while self.needs_list_layout.count():
             child = self.needs_list_layout.takeAt(0)
