@@ -38,43 +38,43 @@ except Exception:
 APP_TITLE = "Advising Dashboard"
 HEADER_TEXT = "One Dashboard To Rule Them All"
 
-# Glassmorphism color palette - dark purple/blue with glowing accents
+# Glassmorphism color palette - balanced blue + purple with black undertones
 COLORS = {
-    # Backgrounds - deep purple to blue gradient
-    'bg_gradient_1': '#0a0a1f',     # Very dark purple-black
-    'bg_gradient_2': '#1a0d33',     # Deep purple
-    'bg_gradient_3': '#2d1b4e',     # Medium purple
-    'bg_gradient_4': '#1e1640',     # Dark blue-purple
+    # Backgrounds - black edges with blended midnight blue and deep violet core
+    'bg_gradient_1': '#02030a',
+    'bg_gradient_2': '#08152d',
+    'bg_gradient_3': '#1b1d4a',
+    'bg_gradient_4': '#090413',
     
-    # Glass effects - purple tinted
-    'glass_bg': 'rgba(100, 80, 180, 0.15)',      # Purple-tinted glass
-    'glass_border': 'rgba(147, 112, 219, 0.4)',  # Purple border
-    'glass_glow': 'rgba(147, 112, 219, 0.6)',    # Bright purple glow
-    'glass_shadow': 'rgba(88, 28, 135, 0.5)',    # Purple shadow
+    # Glass effects - equal blue/purple glow mix
+    'glass_bg': 'rgba(82, 103, 255, 0.11)',
+    'glass_border': 'rgba(136, 168, 255, 0.34)',
+    'glass_glow': 'rgba(115, 104, 255, 0.62)',
+    'glass_shadow': 'rgba(6, 8, 25, 0.78)',
     
-    # Card backgrounds - purple tinted glass
-    'card_bg': 'rgba(75, 60, 150, 0.18)',
-    'card_hover': 'rgba(100, 80, 180, 0.25)',
+    # Card backgrounds - dark frosted indigo glass
+    'card_bg': 'rgba(11, 14, 39, 0.38)',
+    'card_hover': 'rgba(35, 32, 90, 0.50)',
     
-    # Text - bright for dark background
-    'text_primary': '#ffffff',
-    'text_secondary': '#e9d5ff',     # Light purple
-    'text_muted': '#c4b5fd',         # Medium purple
+    # Text
+    'text_primary': '#f8fbff',
+    'text_secondary': '#d8ddff',
+    'text_muted': '#a5b4fc',
     
-    # Accent colors - vibrant glowing
-    'accent_purple': '#a78bfa',      # Bright purple
-    'accent_blue': '#818cf8',        # Bright blue
-    'accent_pink': '#f472b6',        # Bright pink
+    # Accent colors - balanced blue and purple
+    'accent_purple': '#8b5cf6',
+    'accent_blue': '#4f8cff',
+    'accent_pink': '#b794f6',
     
-    # Status colors - neon glow
-    'status_needed': '#f472b6',      # Bright pink
-    'status_partial': '#fbbf24',     # Bright yellow
-    'status_complete': '#34d399',    # Bright green
+    # Status colors
+    'status_needed': '#60a5fa',
+    'status_partial': '#fbbf24',
+    'status_complete': '#34d399',
     
     # Button colors
-    'button_bg': 'rgba(139, 92, 246, 0.3)',
-    'button_hover': 'rgba(139, 92, 246, 0.5)',
-    'button_border': 'rgba(167, 139, 250, 0.6)',
+    'button_bg': 'rgba(79, 70, 229, 0.34)',
+    'button_hover': 'rgba(96, 101, 255, 0.56)',
+    'button_border': 'rgba(153, 170, 255, 0.52)',
 }
 
 TRACK_LABELS = {
