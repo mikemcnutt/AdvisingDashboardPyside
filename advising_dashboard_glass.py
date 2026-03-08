@@ -37,33 +37,38 @@ except Exception:
 APP_TITLE = "Advising Dashboard"
 HEADER_TEXT = "One Dashboard To Rule Them All"
 
-# Glassmorphism color palette - cohesive blue frosted glass theme
+# Glassmorphism color palette - enhanced readability with gradient
 COLORS = {
-    # Backgrounds - unified blue gradient
-    'bg_main': '#1a3d5c',           # Deep blue
-    'bg_gradient_start': '#2b5278', # Medium blue
-    'bg_gradient_end': '#4a7ba7',   # Lighter blue
+    # Backgrounds - beautiful gradient
+    'bg_gradient_1': '#1a4d6d',     # Deep ocean blue
+    'bg_gradient_2': '#2d5f7e',     # Medium blue
+    'bg_gradient_3': '#3d7a9f',     # Lighter blue
+    'bg_gradient_4': '#4a8db3',     # Bright blue
     
-    # Glass effects - softer, more transparent
-    'glass_bg': 'rgba(255, 255, 255, 0.12)',  # More visible translucent
-    'glass_border': 'rgba(255, 255, 255, 0.3)', # Soft white border
-    'glass_glow': 'rgba(255, 255, 255, 0.5)',   # Bright white glow
-    'glass_shadow': 'rgba(0, 0, 0, 0.2)',       # Subtle shadow
+    # Glass effects - more visible
+    'glass_bg': 'rgba(255, 255, 255, 0.18)',  # Brighter translucent
+    'glass_border': 'rgba(255, 255, 255, 0.4)', # More visible border
+    'glass_glow': 'rgba(255, 255, 255, 0.6)',   # Bright glow
+    'glass_shadow': 'rgba(0, 0, 0, 0.25)',       # Darker shadow
     
-    # Accents - lighter, softer tones
-    'accent_light': '#a8d8ea',      # Light cyan
-    'accent_bright': '#e3f2fd',     # Very light blue
-    'accent_white': '#ffffff',      # Pure white
+    # Card backgrounds - lighter for better text contrast
+    'card_bg': 'rgba(255, 255, 255, 0.22)',
+    'card_hover': 'rgba(255, 255, 255, 0.28)',
     
-    # Text - white and light blue
-    'text_primary': '#ffffff',
-    'text_secondary': '#e3f2fd',
-    'text_muted': '#b3d9f2',
+    # Text - high contrast for readability
+    'text_primary': '#ffffff',       # Pure white
+    'text_secondary': '#f0f4f8',     # Very light
+    'text_muted': '#d1e3f0',         # Light blue-white
+    'text_dark': '#1a2332',          # Dark for light backgrounds
     
-    # Status colors - softer tones
-    'status_needed': 'rgba(255, 150, 150, 0.8)',   # Soft red
-    'status_partial': 'rgba(255, 200, 100, 0.8)',  # Soft gold
-    'status_complete': 'rgba(150, 255, 180, 0.8)', # Soft green
+    # Status colors - high contrast
+    'status_needed': 'rgba(255, 100, 120, 0.9)',   # Bright red
+    'status_partial': 'rgba(255, 200, 80, 0.9)',   # Bright gold
+    'status_complete': 'rgba(100, 255, 150, 0.9)', # Bright green
+    
+    # Button colors
+    'button_bg': 'rgba(255, 255, 255, 0.25)',
+    'button_hover': 'rgba(255, 255, 255, 0.35)',
 }
 
 TRACK_LABELS = {
@@ -254,20 +259,20 @@ class GlassCard(QFrame):
         self.glow_color = glow_color or COLORS['glass_border']
         self.border_width = border_width
         
-        # Softer frosted glass effect
+        # Brighter frosted glass for better text visibility
         self.setStyleSheet(f"""
             QFrame {{
-                background-color: rgba(255, 255, 255, 0.15);
-                border: {border_width}px solid rgba(255, 255, 255, 0.3);
+                background-color: {COLORS['card_bg']};
+                border: {border_width}px solid {COLORS['glass_border']};
                 border-radius: 24px;
             }}
         """)
         
-        # Subtle shadow instead of bright glow
+        # Stronger shadow for depth
         shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(20)
-        shadow.setColor(QColor(0, 0, 0, 60))
-        shadow.setOffset(0, 4)
+        shadow.setBlurRadius(25)
+        shadow.setColor(QColor(0, 0, 0, 80))
+        shadow.setOffset(0, 5)
         self.setGraphicsEffect(shadow)
 
 
@@ -276,7 +281,7 @@ class GlassButton(QPushButton):
     def __init__(self, text, glow_color=None, parent=None):
         super().__init__(text, parent)
         
-        self.glow_color = glow_color or COLORS['accent_light']
+        self.glow_color = glow_color or COLORS['button_bg']
         
         self.setMinimumHeight(44)
         self.setMinimumWidth(130)
@@ -285,20 +290,20 @@ class GlassButton(QPushButton):
         
         self._update_style(False)
         
-        # Soft shadow
+        # Stronger shadow for depth
         self.shadow = QGraphicsDropShadowEffect()
-        self.shadow.setBlurRadius(15)
-        self.shadow.setColor(QColor(0, 0, 0, 40))
-        self.shadow.setOffset(0, 2)
+        self.shadow.setBlurRadius(20)
+        self.shadow.setColor(QColor(0, 0, 0, 60))
+        self.shadow.setOffset(0, 3)
         self.setGraphicsEffect(self.shadow)
     
     def _update_style(self, hovering):
         if hovering:
             self.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: rgba(255, 255, 255, 0.25);
+                    background-color: {COLORS['button_hover']};
                     color: {COLORS['text_primary']};
-                    border: 2px solid rgba(255, 255, 255, 0.5);
+                    border: 2px solid {COLORS['glass_glow']};
                     border-radius: 22px;
                     padding: 10px 28px;
                     font-weight: bold;
@@ -307,9 +312,9 @@ class GlassButton(QPushButton):
         else:
             self.setStyleSheet(f"""
                 QPushButton {{
-                    background-color: rgba(255, 255, 255, 0.18);
+                    background-color: {COLORS['button_bg']};
                     color: {COLORS['text_primary']};
-                    border: 2px solid rgba(255, 255, 255, 0.35);
+                    border: 2px solid {COLORS['glass_border']};
                     border-radius: 22px;
                     padding: 10px 28px;
                     font-weight: bold;
@@ -341,25 +346,25 @@ class StudentCard(QFrame):
         
         self.setStyleSheet(f"""
             QFrame {{
-                background-color: rgba(255, 255, 255, 0.12);
-                border: 2px solid rgba(255, 255, 255, 0.2);
+                background-color: {COLORS['card_bg']};
+                border: 2px solid {COLORS['glass_border']};
                 border-radius: 14px;
                 padding: 12px;
             }}
             QFrame:hover {{
-                background-color: rgba(255, 255, 255, 0.18);
-                border: 2px solid rgba(255, 255, 255, 0.35);
+                background-color: {COLORS['card_hover']};
+                border: 2px solid {COLORS['glass_glow']};
             }}
         """)
         
         self.setMinimumHeight(80)
         self.setCursor(Qt.PointingHandCursor)
         
-        # Subtle shadow
+        # Stronger shadow for better separation
         shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(12)
-        shadow.setColor(QColor(0, 0, 0, 40))
-        shadow.setOffset(0, 2)
+        shadow.setBlurRadius(18)
+        shadow.setColor(QColor(0, 0, 0, 70))
+        shadow.setOffset(0, 3)
         self.setGraphicsEffect(shadow)
         
         self._setup_ui()
@@ -401,6 +406,14 @@ class StudentCard(QFrame):
                 background: transparent;
             }}
         """)
+        
+        # Add text shadow for readability
+        name_shadow = QGraphicsDropShadowEffect()
+        name_shadow.setBlurRadius(12)
+        name_shadow.setColor(QColor(0, 0, 0, 120))
+        name_shadow.setOffset(0, 1)
+        name_label.setGraphicsEffect(name_shadow)
+        
         top_row.addWidget(name_label)
         top_row.addStretch()
         
@@ -444,10 +457,23 @@ class StudentCard(QFrame):
         
         layout.addLayout(top_row)
         
-        # Badges
+        # Badges with better contrast
         badges_label = QLabel("  ".join(self.student.badges))
-        badges_label.setFont(QFont("Segoe UI", 9))
-        badges_label.setStyleSheet(f"color: {COLORS['text_muted']}; background: transparent;")
+        badges_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        badges_label.setStyleSheet(f"""
+            QLabel {{
+                color: {COLORS['text_primary']};
+                background: transparent;
+            }}
+        """)
+        
+        # Add text shadow
+        badges_shadow = QGraphicsDropShadowEffect()
+        badges_shadow.setBlurRadius(10)
+        badges_shadow.setColor(QColor(0, 0, 0, 100))
+        badges_shadow.setOffset(0, 1)
+        badges_label.setGraphicsEffect(badges_shadow)
+        
         layout.addWidget(badges_label)
     
     def mousePressEvent(self, event):
@@ -464,20 +490,20 @@ class ColumnCard(QFrame):
         self.glow_color = glow_color
         self.title_label = None
         
-        # Softer glassmorphism styling
+        # Better glass styling for readability
         self.setStyleSheet(f"""
             QFrame {{
-                background-color: rgba(255, 255, 255, 0.12);
-                border: 2px solid rgba(255, 255, 255, 0.25);
+                background-color: {COLORS['card_bg']};
+                border: 2px solid {COLORS['glass_border']};
                 border-radius: 28px;
             }}
         """)
         
-        # Subtle shadow
+        # Stronger shadow
         shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(25)
-        shadow.setColor(QColor(0, 0, 0, 50))
-        shadow.setOffset(0, 5)
+        shadow.setBlurRadius(30)
+        shadow.setColor(QColor(0, 0, 0, 80))
+        shadow.setOffset(0, 6)
         self.setGraphicsEffect(shadow)
         
         layout = QVBoxLayout(self)
@@ -508,8 +534,9 @@ class ColumnCard(QFrame):
         title_layout.setContentsMargins(0, 8, 0, 0)
         title_layout.setSpacing(4)
         
+        # Title with shadow for readability
         self.title_label = QLabel(title)
-        self.title_label.setFont(QFont("Segoe UI", 15, QFont.Bold))
+        self.title_label.setFont(QFont("Segoe UI", 16, QFont.Bold))
         self.title_label.setStyleSheet(f"""
             QLabel {{
                 color: {COLORS['text_primary']};
@@ -518,16 +545,12 @@ class ColumnCard(QFrame):
         """)
         self.title_label.setAlignment(Qt.AlignCenter)
         
-        # Count badge
-        self.count_label = QLabel("0")
-        self.count_label.setFont(QFont("Segoe UI", 28, QFont.Bold))
-        self.count_label.setStyleSheet(f"""
-            QLabel {{
-                color: {COLORS['text_primary']};
-                background: transparent;
-            }}
-        """)
-        self.count_label.setAlignment(Qt.AlignCenter)
+        # Strong text shadow for readability
+        title_shadow = QGraphicsDropShadowEffect()
+        title_shadow.setBlurRadius(20)
+        title_shadow.setColor(QColor(0, 0, 0, 150))
+        title_shadow.setOffset(0, 2)
+        self.title_label.setGraphicsEffect(title_shadow)
         
         title_layout.addWidget(self.title_label)
         
@@ -633,7 +656,7 @@ class AdvisingDashboard(QMainWindow):
         layout.setAlignment(Qt.AlignCenter)
         layout.setSpacing(8)
         
-        # Main title with glow
+        # Main title with strong shadow for readability
         title = QLabel(HEADER_TEXT)
         title.setFont(QFont("Segoe UI", 36, QFont.Bold))
         title.setStyleSheet(f"""
@@ -644,25 +667,33 @@ class AdvisingDashboard(QMainWindow):
         """)
         title.setAlignment(Qt.AlignCenter)
         
-        # Add text glow effect
+        # Add strong text shadow effect for readability
         title_shadow = QGraphicsDropShadowEffect()
-        title_shadow.setBlurRadius(30)
-        title_shadow.setColor(QColor(COLORS['accent_light']))
-        title_shadow.setOffset(0, 0)
+        title_shadow.setBlurRadius(40)
+        title_shadow.setColor(QColor(0, 0, 0, 180))
+        title_shadow.setOffset(0, 2)
         title.setGraphicsEffect(title_shadow)
         
         layout.addWidget(title)
         
-        # Subtitle
+        # Subtitle with shadow
         subtitle = QLabel("Advanced Student Management System")
         subtitle.setFont(QFont("Segoe UI", 12, QFont.Bold))
         subtitle.setStyleSheet(f"""
             QLabel {{
-                color: {COLORS['accent_light']};
+                color: {COLORS['text_primary']};
                 background: transparent;
             }}
         """)
         subtitle.setAlignment(Qt.AlignCenter)
+        
+        # Add text shadow
+        subtitle_shadow = QGraphicsDropShadowEffect()
+        subtitle_shadow.setBlurRadius(20)
+        subtitle_shadow.setColor(QColor(0, 0, 0, 150))
+        subtitle_shadow.setOffset(0, 1)
+        subtitle.setGraphicsEffect(subtitle_shadow)
+        
         layout.addWidget(subtitle)
         
         parent_layout.addWidget(header_card)
@@ -752,17 +783,25 @@ class AdvisingDashboard(QMainWindow):
         
         layout.addLayout(folder_row)
         
-        # Status
+        # Status with shadow
         self.status_label = QLabel("Ready")
-        self.status_label.setFont(QFont("Segoe UI", 10))
+        self.status_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
         self.status_label.setStyleSheet(f"""
             QLabel {{
-                color: {COLORS['text_muted']};
+                color: {COLORS['text_primary']};
                 background: transparent;
                 font-style: italic;
             }}
         """)
         self.status_label.setAlignment(Qt.AlignRight)
+        
+        # Add text shadow
+        status_shadow = QGraphicsDropShadowEffect()
+        status_shadow.setBlurRadius(12)
+        status_shadow.setColor(QColor(0, 0, 0, 100))
+        status_shadow.setOffset(0, 1)
+        self.status_label.setGraphicsEffect(status_shadow)
+        
         layout.addWidget(self.status_label)
         
         # Email templates
@@ -795,10 +834,18 @@ class AdvisingDashboard(QMainWindow):
         label.setFont(QFont("Segoe UI", 10, QFont.Bold))
         label.setStyleSheet(f"""
             QLabel {{
-                color: {COLORS['accent_light']};
+                color: {COLORS['text_primary']};
                 background: transparent;
             }}
         """)
+        
+        # Add text shadow for better readability
+        label_shadow = QGraphicsDropShadowEffect()
+        label_shadow.setBlurRadius(15)
+        label_shadow.setColor(QColor(0, 0, 0, 120))
+        label_shadow.setOffset(0, 1)
+        label.setGraphicsEffect(label_shadow)
+        
         layout.addWidget(label)
         
         return widget
@@ -893,20 +940,22 @@ class AdvisingDashboard(QMainWindow):
         return scroll
     
     def _apply_styles(self):
-        # Global stylesheet with cohesive glassmorphism
+        # Global stylesheet with beautiful gradient and high contrast
         self.setStyleSheet(f"""
             QMainWindow {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 #2b5278,
-                    stop:0.5 #3d6a94,
-                    stop:1 #4a7ba7);
+                    stop:0 {COLORS['bg_gradient_1']},
+                    stop:0.33 {COLORS['bg_gradient_2']},
+                    stop:0.66 {COLORS['bg_gradient_3']},
+                    stop:1 {COLORS['bg_gradient_4']});
             }}
             
             #centralWidget {{
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 #2b5278,
-                    stop:0.5 #3d6a94,
-                    stop:1 #4a7ba7);
+                    stop:0 {COLORS['bg_gradient_1']},
+                    stop:0.33 {COLORS['bg_gradient_2']},
+                    stop:0.66 {COLORS['bg_gradient_3']},
+                    stop:1 {COLORS['bg_gradient_4']});
             }}
             
             QWidget {{
@@ -914,31 +963,36 @@ class AdvisingDashboard(QMainWindow):
             }}
             
             QLineEdit {{
-                background-color: rgba(255, 255, 255, 0.15);
+                background-color: {COLORS['card_bg']};
                 color: {COLORS['text_primary']};
-                border: 2px solid rgba(255, 255, 255, 0.3);
+                border: 2px solid {COLORS['glass_border']};
                 border-radius: 12px;
                 padding: 10px 16px;
                 font-size: 11pt;
-                selection-background-color: rgba(255, 255, 255, 0.3);
+                font-weight: 500;
+                selection-background-color: rgba(255, 255, 255, 0.4);
             }}
             QLineEdit:focus {{
-                border-color: rgba(255, 255, 255, 0.5);
-                background-color: rgba(255, 255, 255, 0.2);
+                border-color: {COLORS['glass_glow']};
+                background-color: rgba(255, 255, 255, 0.28);
+            }}
+            QLineEdit::placeholder {{
+                color: {COLORS['text_muted']};
             }}
             
             QComboBox {{
-                background-color: rgba(255, 255, 255, 0.15);
+                background-color: {COLORS['card_bg']};
                 color: {COLORS['text_primary']};
-                border: 2px solid rgba(255, 255, 255, 0.3);
+                border: 2px solid {COLORS['glass_border']};
                 border-radius: 12px;
                 padding: 8px 16px;
                 font-size: 11pt;
+                font-weight: 500;
                 min-height: 28px;
             }}
             QComboBox:hover {{
-                border-color: rgba(255, 255, 255, 0.5);
-                background-color: rgba(255, 255, 255, 0.2);
+                border-color: {COLORS['glass_glow']};
+                background-color: rgba(255, 255, 255, 0.28);
             }}
             QComboBox::drop-down {{
                 border: none;
@@ -949,12 +1003,13 @@ class AdvisingDashboard(QMainWindow):
                 border: none;
             }}
             QComboBox QAbstractItemView {{
-                background-color: rgba(60, 100, 140, 0.95);
+                background-color: rgba(30, 70, 100, 0.95);
                 color: {COLORS['text_primary']};
-                selection-background-color: rgba(255, 255, 255, 0.25);
-                border: 2px solid rgba(255, 255, 255, 0.3);
+                selection-background-color: rgba(255, 255, 255, 0.3);
+                border: 2px solid {COLORS['glass_border']};
                 border-radius: 10px;
                 padding: 5px;
+                font-weight: 500;
             }}
             
             QCheckBox {{
@@ -962,21 +1017,22 @@ class AdvisingDashboard(QMainWindow):
                 spacing: 10px;
                 background: transparent;
                 font-size: 11pt;
+                font-weight: 500;
             }}
             QCheckBox::indicator {{
                 width: 24px;
                 height: 24px;
                 border-radius: 8px;
-                border: 2px solid rgba(255, 255, 255, 0.4);
-                background-color: rgba(255, 255, 255, 0.1);
+                border: 2px solid {COLORS['glass_border']};
+                background-color: rgba(255, 255, 255, 0.15);
             }}
             QCheckBox::indicator:checked {{
-                background-color: rgba(255, 255, 255, 0.35);
-                border-color: rgba(255, 255, 255, 0.6);
+                background-color: rgba(255, 255, 255, 0.45);
+                border-color: {COLORS['glass_glow']};
             }}
             QCheckBox::indicator:hover {{
-                border-color: rgba(255, 255, 255, 0.6);
-                background-color: rgba(255, 255, 255, 0.15);
+                border-color: {COLORS['glass_glow']};
+                background-color: rgba(255, 255, 255, 0.25);
             }}
             
             QLabel {{
@@ -989,18 +1045,18 @@ class AdvisingDashboard(QMainWindow):
             }}
             
             QScrollBar:vertical {{
-                background-color: rgba(255, 255, 255, 0.08);
+                background-color: rgba(255, 255, 255, 0.1);
                 width: 12px;
                 border-radius: 6px;
                 margin: 0px;
             }}
             QScrollBar::handle:vertical {{
-                background-color: rgba(255, 255, 255, 0.25);
+                background-color: rgba(255, 255, 255, 0.35);
                 border-radius: 6px;
                 min-height: 30px;
             }}
             QScrollBar::handle:vertical:hover {{
-                background-color: rgba(255, 255, 255, 0.35);
+                background-color: rgba(255, 255, 255, 0.5);
             }}
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 height: 0px;
@@ -1232,15 +1288,21 @@ class AdvisingDashboard(QMainWindow):
                 header.setFont(QFont("Segoe UI", 12, QFont.Bold))
                 header.setStyleSheet(f"""
                     QLabel {{
-                        background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                            stop:0 rgba(77, 208, 225, 0.2),
-                            stop:1 rgba(100, 181, 246, 0.1));
+                        background-color: rgba(255, 255, 255, 0.25);
                         color: {COLORS['text_primary']};
                         padding: 10px;
                         border-radius: 10px;
-                        border-left: 4px solid {accent_color};
+                        border: 2px solid rgba(255, 255, 255, 0.3);
                     }}
                 """)
+                
+                # Add text shadow
+                header_shadow = QGraphicsDropShadowEffect()
+                header_shadow.setBlurRadius(15)
+                header_shadow.setColor(QColor(0, 0, 0, 120))
+                header_shadow.setOffset(0, 1)
+                header.setGraphicsEffect(header_shadow)
+                
                 layout.addWidget(header)
             
             card = StudentCard(s, accent_color, show_checkbox=show_checkbox, show_email_btn=show_email_btn)
