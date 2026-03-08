@@ -116,6 +116,8 @@ def save_settings(settings: dict):
 @dataclass
 class SnapshotInfo:
     file_path: Path
+    first_name: str
+    last_name: str
     student_name: str
     student_id: str
     kctcs_email: str
@@ -237,18 +239,18 @@ def build_email_subject(template: str, term_label: str) -> str:
     return f"{template} - {term_label}"
 
 
-def send_outlook_emails(subject: str, body_html: str, recipients: List[str], draft: bool = False):
+def send_outlook_emails(messages: List[Tuple[str, str, str]], draft: bool = False):
     if win32com is None:
         QMessageBox.critical(None, "Error", "Outlook automation not available (win32com not installed)")
         return
 
     try:
         outlook = win32com.client.Dispatch("Outlook.Application")
-        for addr in recipients:
+        for addr, subject, body_text in messages:
             mail = outlook.CreateItem(0)
             mail.To = addr
             mail.Subject = subject
-            mail.HTMLBody = body_html
+            mail.Body = body_text
             if draft:
                 mail.Save()
             else:
@@ -367,7 +369,7 @@ class StudentCard(QFrame):
             }}
         """)
         
-        self.setMinimumHeight(80)
+        self.setMinimumHeight(96)
         self.setCursor(Qt.PointingHandCursor)
         
         # Stronger shadow for better separation
@@ -382,7 +384,7 @@ class StudentCard(QFrame):
     def _setup_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(14, 12, 14, 12)
-        layout.setSpacing(8)
+        layout.setSpacing(4)
         
         # Top row
         top_row = QHBoxLayout()
@@ -409,7 +411,7 @@ class StudentCard(QFrame):
         
         # Name
         name_label = QLabel(self.student.student_name)
-        name_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        name_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
         name_label.setStyleSheet(f"""
             QLabel {{
                 color: {COLORS['text_primary']};
@@ -469,7 +471,7 @@ class StudentCard(QFrame):
         
         # Badges with better contrast
         badges_label = QLabel("  ".join(self.student.badges))
-        badges_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        badges_label.setFont(QFont("Segoe UI", 9, QFont.Bold))
         badges_label.setStyleSheet(f"""
             QLabel {{
                 color: {COLORS['text_primary']};
@@ -572,8 +574,8 @@ class ColumnCard(QFrame):
         self.content = QWidget()
         self.content.setStyleSheet("background: transparent;")
         self.content_layout = QVBoxLayout(self.content)
-        self.content_layout.setContentsMargins(16, 16, 16, 16)
-        self.content_layout.setSpacing(12)
+        self.content_layout.setContentsMargins(14, 14, 14, 14)
+        self.content_layout.setSpacing(10)
         
         layout.addWidget(self.content)
     
@@ -646,8 +648,8 @@ class AdvisingDashboard(QMainWindow):
         self.setCentralWidget(central)
         
         main_layout = QVBoxLayout(central)
-        main_layout.setContentsMargins(24, 24, 24, 24)
-        main_layout.setSpacing(24)
+        main_layout.setContentsMargins(18, 18, 18, 18)
+        main_layout.setSpacing(14)
         
         # Header
         self._build_header(main_layout)
@@ -657,19 +659,22 @@ class AdvisingDashboard(QMainWindow):
         
         # Student columns
         self._build_columns(main_layout)
+        main_layout.setStretch(0, 0)
+        main_layout.setStretch(1, 0)
+        main_layout.setStretch(2, 1)
     
     def _build_header(self, parent_layout):
         header_card = GlassCard()
-        header_card.setMinimumHeight(120)
-        header_card.setMaximumHeight(120)
+        header_card.setMinimumHeight(86)
+        header_card.setMaximumHeight(86)
         
         layout = QVBoxLayout(header_card)
         layout.setAlignment(Qt.AlignCenter)
-        layout.setSpacing(8)
+        layout.setSpacing(6)
         
         # Main title with purple glow
         title = QLabel(HEADER_TEXT)
-        title.setFont(QFont("Segoe UI", 36, QFont.Bold))
+        title.setFont(QFont("Segoe UI", 24, QFont.Bold))
         title.setStyleSheet(f"""
             QLabel {{
                 color: {COLORS['text_primary']};
@@ -693,12 +698,12 @@ class AdvisingDashboard(QMainWindow):
         panel = GlassCard(glow_color=COLORS['glass_border'])
         
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(20)
+        layout.setContentsMargins(20, 18, 20, 18)
+        layout.setSpacing(14)
         
         # Top row
         top_row = QHBoxLayout()
-        top_row.setSpacing(20)
+        top_row.setSpacing(14)
         
         # Year
         year_widget = self._create_control_group("Academic Year")
@@ -730,7 +735,7 @@ class AdvisingDashboard(QMainWindow):
         # Quick button
         quick_btn = GlassButton("Quick: Summer + Fall")
         quick_btn.clicked.connect(self._quick_pair)
-        quick_btn.setMaximumWidth(200)
+        quick_btn.setMaximumWidth(180)
         top_row.addWidget(quick_btn)
         
         # Search
@@ -755,7 +760,7 @@ class AdvisingDashboard(QMainWindow):
         
         # Folder row
         folder_row = QHBoxLayout()
-        folder_row.setSpacing(12)
+        folder_row.setSpacing(10)
         
         folder_widget = self._create_control_group("Advising Folder")
         self.folder_entry = QLineEdit(self.folder_path)
@@ -764,12 +769,12 @@ class AdvisingDashboard(QMainWindow):
         
         browse_btn = GlassButton("Browse...")
         browse_btn.clicked.connect(self._browse_folder)
-        browse_btn.setMaximumWidth(120)
+        browse_btn.setMaximumWidth(110)
         folder_row.addWidget(browse_btn)
         
         scan_btn = GlassButton("Scan Folder", glow_color=COLORS['status_complete'])
         scan_btn.clicked.connect(self._scan_folder)
-        scan_btn.setMaximumWidth(160)
+        scan_btn.setMaximumWidth(140)
         folder_row.addWidget(scan_btn)
         
         layout.addLayout(folder_row)
@@ -812,18 +817,20 @@ class AdvisingDashboard(QMainWindow):
         layout.addLayout(email_row)
         
         # Email body text area
-        body_widget = self._create_control_group("Email Body (supports HTML)")
+        body_widget = self._create_control_group("Email Body (plain text)")
         self.email_body = QTextEdit()
-        self.email_body.setPlaceholderText("Write your email message here... Use {term} to insert the semester/year.")
-        self.email_body.setMinimumHeight(100)
-        self.email_body.setMaximumHeight(150)
+        self.email_body.setPlaceholderText("Plain text email. Use {term}, {first_name}, or {student_name}.")
+        self.email_body.setAcceptRichText(False)
+        self.email_body.setLineWrapMode(QTextEdit.WidgetWidth)
+        self.email_body.setMinimumHeight(86)
+        self.email_body.setMaximumHeight(110)
         
         # Load saved body or use default
         default_body = (
-            "<p>Hello,</p>"
-            "<p>This is a reminder that you need to complete your advising appointment for {term}.</p>"
-            "<p>Please schedule your appointment at your earliest convenience.</p>"
-            "<p>Thank you!</p>"
+            "Hello {first_name},\n\n"
+            "This is a reminder that you need to complete your advising appointment for {term}.\n\n"
+            "Please schedule your appointment at your earliest convenience.\n\n"
+            "Thank you!"
         )
         saved_body = self.settings.get("email_body", default_body)
         self.email_body.setPlainText(saved_body)
@@ -863,7 +870,7 @@ class AdvisingDashboard(QMainWindow):
     
     def _build_columns(self, parent_layout):
         columns_layout = QGridLayout()
-        columns_layout.setSpacing(20)
+        columns_layout.setSpacing(16)
         
         # Equal column widths with proper scaling
         columns_layout.setColumnStretch(0, 1)
@@ -873,12 +880,15 @@ class AdvisingDashboard(QMainWindow):
         # Three glowing columns
         self.needs_column = ColumnCard("Needs Advised (0)", COLORS['status_needed'])
         self.needs_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.needs_column.setMinimumHeight(560)
         
         self.partial_column = ColumnCard("Advised (Not Complete) (0)", COLORS['status_partial'])
         self.partial_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.partial_column.setMinimumHeight(560)
         
         self.done_column = ColumnCard("Advised (0)", COLORS['status_complete'])
         self.done_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.done_column.setMinimumHeight(560)
         
         # Add controls to needs column
         controls = QHBoxLayout()
@@ -916,7 +926,7 @@ class AdvisingDashboard(QMainWindow):
         self.needs_list_layout.setAlignment(Qt.AlignTop)
         self.needs_list_layout.setSpacing(10)
         self.needs_scroll.setWidget(self.needs_list)
-        self.needs_column.content_layout.addWidget(self.needs_scroll)
+        self.needs_column.content_layout.addWidget(self.needs_scroll, 1)
         
         self.partial_scroll = self._create_scroll_area()
         self.partial_list = QWidget()
@@ -925,7 +935,7 @@ class AdvisingDashboard(QMainWindow):
         self.partial_list_layout.setAlignment(Qt.AlignTop)
         self.partial_list_layout.setSpacing(10)
         self.partial_scroll.setWidget(self.partial_list)
-        self.partial_column.content_layout.addWidget(self.partial_scroll)
+        self.partial_column.content_layout.addWidget(self.partial_scroll, 1)
         
         self.done_scroll = self._create_scroll_area()
         self.done_list = QWidget()
@@ -934,7 +944,7 @@ class AdvisingDashboard(QMainWindow):
         self.done_list_layout.setAlignment(Qt.AlignTop)
         self.done_list_layout.setSpacing(10)
         self.done_scroll.setWidget(self.done_list)
-        self.done_column.content_layout.addWidget(self.done_scroll)
+        self.done_column.content_layout.addWidget(self.done_scroll, 1)
         
         columns_layout.addWidget(self.needs_column, 0, 0)
         columns_layout.addWidget(self.partial_column, 0, 1)
@@ -1129,24 +1139,51 @@ class AdvisingDashboard(QMainWindow):
             return
         
         json_files = list(folder.rglob("*.json"))
-        
+
         for jf in json_files:
             try:
                 data = json.loads(jf.read_text(encoding="utf-8"))
-            except:
+            except Exception:
                 continue
-            
-            student_name = data.get("studentName", "Unknown")
-            student_id = data.get("studentID", "")
-            kctcs_email = data.get("kctcsEmail", "")
-            personal_email = data.get("personalEmail", "")
-            track = data.get("track", "GT")
-            notes = data.get("notes", "")
-            
+
+            student_block = data.get("student", {}) if isinstance(data.get("student"), dict) else {}
+            selection_block = data.get("selection", {}) if isinstance(data.get("selection"), dict) else {}
+            data_block = data.get("data", {}) if isinstance(data.get("data"), dict) else {}
+
+            first_name = str(student_block.get("firstName") or data.get("firstName") or "").strip()
+            last_name = str(student_block.get("lastName") or data.get("lastName") or "").strip()
+            student_name = " ".join(part for part in [first_name, last_name] if part).strip()
+            if not student_name:
+                student_name = str(data.get("studentName") or student_block.get("name") or jf.stem)
+
+            student_id = str(student_block.get("studentId") or data.get("studentId") or data.get("studentID") or "").strip()
+            kctcs_email = str(student_block.get("kctcsEmail") or data.get("kctcsEmail") or "").strip()
+            personal_email = str(student_block.get("personalEmail") or data.get("personalEmail") or "").strip()
+            track = str(selection_block.get("scenario") or data.get("track") or "GT").strip() or "GT"
+            notes = str(data_block.get("notes") or data.get("notes") or student_block.get("notes") or "").strip()
+
             track_name = TRACK_LABELS.get(track, track)
-            
-            plan = data.get("semesterPlan", {})
-            
+
+            semester_plans = data_block.get("semesterPlans")
+            if isinstance(semester_plans, list):
+                plan_lookup = {}
+                for item in semester_plans:
+                    if not isinstance(item, dict):
+                        continue
+                    season = str(item.get("season", "")).strip().lower()
+                    year = str(item.get("year", "")).strip()
+                    if season:
+                        plan_lookup[(season, year)] = item
+                        if season not in plan_lookup:
+                            plan_lookup[season] = item
+            else:
+                raw_plan = data.get("semesterPlan", {}) if isinstance(data.get("semesterPlan"), dict) else {}
+                plan_lookup = {}
+                for season in ("spring", "summer", "fall"):
+                    item = raw_plan.get(season, {})
+                    if isinstance(item, dict):
+                        plan_lookup[season] = item
+
             badges = []
             spring_done = False
             summer_done = False
@@ -1154,14 +1191,16 @@ class AdvisingDashboard(QMainWindow):
             spring_partial = False
             summer_partial = False
             fall_partial = False
-            
-            for term_name, _year in terms:
+
+            for term_name, year in terms:
                 term_key = term_name.lower()
-                term_data = plan.get(term_key, {})
+                term_data = plan_lookup.get((term_key, year), plan_lookup.get(term_key, {}))
+                if not isinstance(term_data, dict):
+                    term_data = {}
                 courses = term_data.get("courses", [])
-                declined = term_data.get("declined", False)
-                not_complete = term_data.get("notComplete", False)
-                
+                declined = bool(term_data.get("declined", False))
+                not_complete = bool(term_data.get("notComplete", False))
+
                 if declined:
                     badge = "[Not Started]"
                 elif not_complete:
@@ -1170,21 +1209,23 @@ class AdvisingDashboard(QMainWindow):
                     badge = "[Complete]"
                 else:
                     badge = "[Not Started]"
-                
+
                 badges.append(f"{term_name}: {badge}")
-                
+
                 if term_name == "Spring":
-                    spring_done = (badge == "[Complete]")
-                    spring_partial = (badge == "[In Progress]")
+                    spring_done = badge == "[Complete]"
+                    spring_partial = badge == "[In Progress]"
                 elif term_name == "Summer":
-                    summer_done = (badge == "[Complete]")
-                    summer_partial = (badge == "[In Progress]")
+                    summer_done = badge == "[Complete]"
+                    summer_partial = badge == "[In Progress]"
                 elif term_name == "Fall":
-                    fall_done = (badge == "[Complete]")
-                    fall_partial = (badge == "[In Progress]")
-            
+                    fall_done = badge == "[Complete]"
+                    fall_partial = badge == "[In Progress]"
+
             snap = SnapshotInfo(
                 file_path=jf,
+                first_name=first_name,
+                last_name=last_name,
                 student_name=student_name,
                 student_id=student_id,
                 kctcs_email=kctcs_email,
@@ -1201,8 +1242,8 @@ class AdvisingDashboard(QMainWindow):
                 notes=notes
             )
             self.snapshots.append(snap)
-        
-        self.status_label.setText(f"Scanned {len(json_files)} files")
+
+        self.status_label.setText(f"Scanned {len(self.snapshots)} files")
         self._populate_lists()
     
     def _on_search_changed(self):
@@ -1336,7 +1377,7 @@ class AdvisingDashboard(QMainWindow):
             card.clicked.connect(self._open_student)
             
             if show_checkbox and card.checkbox:
-                self.needs_checks[s.student_id] = card.checkbox
+                self.needs_checks[str(s.file_path)] = card.checkbox
             
             layout.addWidget(card)
         
@@ -1362,9 +1403,9 @@ class AdvisingDashboard(QMainWindow):
             cb.setChecked(False)
     
     def _email_selected_needs(self, draft: bool):
-        selected = [s for s in self.snapshots 
-                   if s.student_id in self.needs_checks 
-                   and self.needs_checks[s.student_id].isChecked()]
+        selected = [s for s in self.snapshots
+                   if str(s.file_path) in self.needs_checks
+                   and self.needs_checks[str(s.file_path)].isChecked()]
         
         if not selected:
             QMessageBox.information(self, "No Selection", "No students selected.")
@@ -1377,19 +1418,23 @@ class AdvisingDashboard(QMainWindow):
             if reply != QMessageBox.Yes:
                 return
         
-        recipients = []
+        messages = []
+        term_label = self._term_label()
         for s in selected:
-            if s.kctcs_email:
-                recipients.append(s.kctcs_email)
-            elif s.personal_email:
-                recipients.append(s.personal_email)
-        
-        subject = build_email_subject(self.subject_entry.text(), self._term_label())
-        body = self._build_email_body()
-        
-        send_outlook_emails(subject, body, recipients, draft)
+            recipient = s.kctcs_email or s.personal_email
+            if not recipient:
+                continue
+            subject = build_email_subject(self.subject_entry.text(), term_label)
+            body = self._build_email_body(s)
+            messages.append((recipient, subject, body))
+
+        if not messages:
+            QMessageBox.information(self, "No Email Address", "No selected students had an email address.")
+            return
+
+        send_outlook_emails(messages, draft)
         QMessageBox.information(self, "Done", 
-                               f"{'Drafts created' if draft else 'Emails sent'} for {len(recipients)} student(s).")
+                               f"{'Drafts created' if draft else 'Emails sent'} for {len(messages)} student(s).")
     
     def _term_label(self) -> str:
         year = self.year_combo.currentText()
@@ -1400,23 +1445,37 @@ class AdvisingDashboard(QMainWindow):
             terms.append("Summer")
         if self.fall_check.isChecked():
             terms.append("Fall")
-        
+
         if not terms:
             return year
-        return f"{'/'.join(terms)} {year}"
+        if len(terms) == 1:
+            term_text = terms[0]
+        elif len(terms) == 2:
+            term_text = f"{terms[0]} and {terms[1]}"
+        else:
+            term_text = f"{', '.join(terms[:-1])}, and {terms[-1]}"
+        return f"{term_text} {year}"
     
-    def _build_email_body(self) -> str:
+    def _build_email_body(self, student: Optional[SnapshotInfo] = None) -> str:
         term = self._term_label()
-        body_template = self.email_body.toPlainText()
-        
-        # Replace {term} placeholder with actual term
+        body_template = self.email_body.toPlainText().strip()
+        first_name = "Student"
+        student_name = "Student"
+        if student is not None:
+            first_name = (student.first_name or student.student_name or "Student").strip()
+            student_name = (student.student_name or first_name or "Student").strip()
+
         body = body_template.replace("{term}", term).replace("{TERM}", term)
-        
-        # Add scheduling link if provided
+        body = body.replace("{first_name}", first_name).replace("{FIRST_NAME}", first_name)
+        body = body.replace("{student_name}", student_name).replace("{STUDENT_NAME}", student_name)
+
+        if not body.lower().startswith("hello"):
+            body = f"Hello {first_name},\n\n" + body
+
         link = self.link_entry.text().strip()
-        if link and "scheduling" not in body.lower():
-            body += f'<p>Schedule here: <a href="{html.escape(link)}">{html.escape(link)}</a></p>'
-        
+        if link:
+            body = body.rstrip() + f"\n\nSchedule here: {link}"
+
         return body
     
     def closeEvent(self, event):
