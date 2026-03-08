@@ -42,10 +42,10 @@ HEADER_TEXT = "One Dashboard To Rule Them All"
 # Glassmorphism color palette - balanced blue + purple with black undertones
 COLORS = {
     # Backgrounds - black edges with blended midnight blue and deep violet core
-    'bg_gradient_1': '#02030a',
-    'bg_gradient_2': '#040812',
-    'bg_gradient_3': '#090f20',
-    'bg_gradient_4': '#020307',
+    'bg_gradient_1': '#000000',
+    'bg_gradient_2': '#02040b',
+    'bg_gradient_3': '#050814',
+    'bg_gradient_4': '#000000',
     
     # Glass effects - equal blue/purple glow mix
     'glass_bg': 'rgba(82, 103, 255, 0.11)',
@@ -411,10 +411,11 @@ class StudentCard(QFrame):
     def _setup_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(14, 12, 14, 12)
-        layout.setSpacing(4)
+        layout.setSpacing(6)
         
         # Top row
         top_row = QHBoxLayout()
+        top_row.setSpacing(10)
         
         if self.show_checkbox:
             self.checkbox = QCheckBox()
@@ -439,10 +440,14 @@ class StudentCard(QFrame):
         # Name
         name_label = QLabel(self.student.student_name)
         name_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        name_label.setWordWrap(False)
+        name_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        name_label.setMinimumWidth(150)
         name_label.setStyleSheet(f"""
             QLabel {{
-                color: {COLORS['text_primary']};
+                color: #ffffff;
                 background: transparent;
+                padding: 0;
             }}
         """)
         
@@ -456,41 +461,44 @@ class StudentCard(QFrame):
         top_row.addWidget(name_label)
         top_row.addStretch()
         
-        # Notes badge
+        # Notes button
         if self.student.notes:
-            notes_label = QLabel("Notes")
-            notes_label.setToolTip(self.student.notes)
-            notes_label.setFont(QFont("Segoe UI", 9, QFont.Bold))
-            notes_label.setStyleSheet(f"""
-                QLabel {{
+            notes_btn = QPushButton("Notes")
+            notes_btn.setToolTip(self.student.notes)
+            notes_btn.setCursor(Qt.ArrowCursor)
+            notes_btn.setFocusPolicy(Qt.NoFocus)
+            notes_btn.setFixedSize(92, 34)
+            notes_btn.setStyleSheet(f"""
+                QPushButton {{
                     background-color: {COLORS['button_bg']};
                     color: {COLORS['text_primary']};
-                    padding: 6px 14px;
-                    border-radius: 16px;
                     border: 2px solid {COLORS['button_border']};
-                    font-weight: bold;
+                    border-radius: 17px;
+                    padding: 6px 16px;
+                    font: 700 10pt 'Segoe UI';
                 }}
             """)
-            top_row.addWidget(notes_label)
+            top_row.addWidget(notes_btn)
         
         # Email button
         if self.show_email_btn:
             email_btn = GlassButton("Email", glow_color=COLORS['status_needed'])
-            email_btn.setMaximumWidth(90)
-            email_btn.setMaximumHeight(34)
+            email_btn.setFixedSize(92, 34)
             top_row.addWidget(email_btn)
         
         # Student ID
         if self.student.student_id:
             id_label = QLabel(self.student.student_id)
             id_label.setFont(QFont("Consolas", 10))
+            id_label.setAlignment(Qt.AlignCenter)
+            id_label.setFixedWidth(82)
             id_label.setStyleSheet(f"""
                 QLabel {{
-                    color: {COLORS['text_secondary']};
-                    background-color: rgba(0, 0, 0, 0.2);
-                    padding: 6px 12px;
-                    border-radius: 8px;
-                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    color: #f8fbff;
+                    background-color: rgba(0, 0, 0, 0.42);
+                    padding: 6px 10px;
+                    border-radius: 12px;
+                    border: 1px solid rgba(153, 170, 255, 0.28);
                 }}
             """)
             top_row.addWidget(id_label)
@@ -502,11 +510,11 @@ class StudentCard(QFrame):
         badges_label.setFont(QFont("Segoe UI", 9, QFont.Bold))
         badges_label.setStyleSheet(f"""
             QLabel {{
-                color: {COLORS['text_secondary']};
-                background-color: rgba(0, 0, 0, 0.38);
-                border: 1px solid rgba(138, 154, 255, 0.18);
-                border-radius: 8px;
-                padding: 6px 8px;
+                color: #f8fbff;
+                background-color: rgba(0, 0, 0, 0.62);
+                border: 1px solid rgba(138, 154, 255, 0.28);
+                border-radius: 10px;
+                padding: 7px 10px;
             }}
         """)
         
@@ -630,11 +638,11 @@ class BloomBackground(QWidget):
         painter.fillRect(r, base)
 
         blooms = [
-            ((r.width() * 0.22, r.height() * 0.12), r.width() * 0.28, QColor(79, 140, 255, 40)),
-            ((r.width() * 0.78, r.height() * 0.18), r.width() * 0.24, QColor(139, 92, 246, 36)),
-            ((r.width() * 0.20, r.height() * 0.64), r.width() * 0.20, QColor(79, 140, 255, 44)),
-            ((r.width() * 0.82, r.height() * 0.68), r.width() * 0.18, QColor(139, 92, 246, 44)),
-            ((r.width() * 0.52, r.height() * 0.90), r.width() * 0.32, QColor(100, 120, 255, 34)),
+            ((r.width() * 0.22, r.height() * 0.12), r.width() * 0.24, QColor(79, 140, 255, 26)),
+            ((r.width() * 0.78, r.height() * 0.18), r.width() * 0.20, QColor(139, 92, 246, 24)),
+            ((r.width() * 0.20, r.height() * 0.64), r.width() * 0.16, QColor(79, 140, 255, 28)),
+            ((r.width() * 0.82, r.height() * 0.68), r.width() * 0.15, QColor(139, 92, 246, 28)),
+            ((r.width() * 0.52, r.height() * 0.90), r.width() * 0.24, QColor(100, 120, 255, 20)),
         ]
         painter.setPen(Qt.NoPen)
         for (cx, cy), radius, color in blooms:
@@ -1009,24 +1017,34 @@ class AdvisingDashboard(QMainWindow):
             }}
 
             QLineEdit, QComboBox, QTextEdit {{
-                background-color: rgba(255, 255, 255, 0.97);
-                color: #171b34;
-                border: 1px solid rgba(138, 154, 255, 0.45);
+                background-color: #ffffff;
+                color: #355cff;
+                border: 1px solid rgba(138, 154, 255, 0.55);
                 border-radius: 16px;
                 padding: 12px 14px;
-                selection-background-color: rgba(99, 102, 241, 0.25);
-                selection-color: #171b34;
+                selection-background-color: rgba(79, 140, 255, 0.22);
+                selection-color: #17306b;
                 font-size: 14px;
+                font-weight: 600;
             }}
 
             QLineEdit::placeholder, QTextEdit[placeholderText="true"] {{
-                color: #5f6b96;
+                color: #6a79b8;
             }}
 
             QLineEdit:focus, QComboBox:focus, QTextEdit:focus {{
-                border: 1px solid rgba(126, 165, 255, 0.85);
-                background-color: rgba(255, 255, 255, 1.0);
-                color: #12162b;
+                border: 1px solid rgba(79, 140, 255, 0.95);
+                background-color: #ffffff;
+                color: #355cff;
+            }}
+
+            QComboBox QAbstractItemView {{
+                background-color: #ffffff;
+                color: #355cff;
+                border: 1px solid rgba(138, 154, 255, 0.45);
+                selection-background-color: rgba(79, 140, 255, 0.14);
+                selection-color: #17306b;
+                outline: 0;
             }}
 
             QToolTip {{
