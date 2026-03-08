@@ -648,7 +648,7 @@ class AdvisingDashboard(QMainWindow):
         self._build_columns(main_layout)
     
     def _build_header(self, parent_layout):
-        header_card = GlassCard(glow_color=COLORS['accent_light'])
+        header_card = GlassCard()
         header_card.setMinimumHeight(120)
         header_card.setMaximumHeight(120)
         
@@ -737,7 +737,7 @@ class AdvisingDashboard(QMainWindow):
         top_row.addWidget(sem_widget)
         
         # Quick button
-        quick_btn = GlassButton("Quick: Summer + Fall", glow_color=COLORS['accent_light'])
+        quick_btn = GlassButton("Quick: Summer + Fall")
         quick_btn.clicked.connect(self._quick_pair)
         quick_btn.setMaximumWidth(200)
         top_row.addWidget(quick_btn)
@@ -771,7 +771,7 @@ class AdvisingDashboard(QMainWindow):
         folder_widget.layout().addWidget(self.folder_entry)
         folder_row.addWidget(folder_widget, 1)
         
-        browse_btn = GlassButton("Browse...", glow_color=COLORS['accent_light'])
+        browse_btn = GlassButton("Browse...")
         browse_btn.clicked.connect(self._browse_folder)
         browse_btn.setMaximumWidth(120)
         folder_row.addWidget(browse_btn)
@@ -873,19 +873,19 @@ class AdvisingDashboard(QMainWindow):
         controls = QHBoxLayout()
         controls.setSpacing(12)
         
-        select_all_btn = GlassButton("Select All", glow_color=COLORS['accent_light'])
+        select_all_btn = GlassButton("Select All")
         select_all_btn.clicked.connect(self._select_all_needs)
         select_all_btn.setMaximumWidth(120)
         controls.addWidget(select_all_btn)
         
-        select_none_btn = GlassButton("Select None", glow_color=COLORS['accent_light'])
+        select_none_btn = GlassButton("Select None")
         select_none_btn.clicked.connect(self._select_none_needs)
         select_none_btn.setMaximumWidth(120)
         controls.addWidget(select_none_btn)
         
         controls.addStretch()
         
-        draft_btn = GlassButton("Create Draft", glow_color=COLORS['accent_light'])
+        draft_btn = GlassButton("Create Draft")
         draft_btn.clicked.connect(lambda: self._email_selected_needs(True))
         draft_btn.setMaximumWidth(130)
         controls.addWidget(draft_btn)
