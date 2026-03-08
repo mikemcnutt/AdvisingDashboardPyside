@@ -717,47 +717,39 @@ class AdvisingDashboard(QMainWindow):
         self._build_columns(main_layout)
 
         main_layout.setStretch(0, 0)
-        main_layout.setStretch(1, 0)
-        main_layout.setStretch(2, 1)
+        main_layout.setStretch(1, 1)
+        main_layout.setStretch(2, 3)
     
     def _build_header(self, parent_layout):
         header_card = GlassCard(glow_color=COLORS['glass_glow'])
-        header_card.setMinimumHeight(180)
-        header_card.setMaximumHeight(220)
+        header_card.setMinimumHeight(104)
+        header_card.setMaximumHeight(118)
+        header_card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         layout = QVBoxLayout(header_card)
-        layout.setContentsMargins(34, 28, 34, 28)
-        layout.setSpacing(10)
-
-        eyebrow = QLabel("ADVISING DASHBOARD")
-        eyebrow.setAlignment(Qt.AlignCenter)
-        eyebrow.setFont(QFont("Segoe UI", 11, QFont.Bold))
-        eyebrow.setStyleSheet(f"color: {COLORS['text_muted']}; letter-spacing: 2px; background: transparent;")
-        layout.addWidget(eyebrow)
+        layout.setContentsMargins(34, 18, 34, 18)
+        layout.setSpacing(0)
 
         title = QLabel("One Dashboard to Rule Them All")
-        title.setWordWrap(True)
+        title.setWordWrap(False)
         title.setAlignment(Qt.AlignCenter)
-        title.setFont(QFont("Segoe UI", 30, QFont.Bold))
+        title.setFont(QFont("Segoe UI", 28, QFont.Bold))
         title.setStyleSheet(f"color: {COLORS['text_primary']}; background: transparent;")
         title_shadow = QGraphicsDropShadowEffect()
-        title_shadow.setBlurRadius(48)
+        title_shadow.setBlurRadius(42)
         title_shadow.setColor(QColor(COLORS['accent_blue']))
         title_shadow.setOffset(0, 0)
         title.setGraphicsEffect(title_shadow)
+        layout.addStretch(1)
         layout.addWidget(title)
-
-        subtitle = QLabel("Dark glass panels, blue-purple bloom, and larger advising queues designed to show more students at once.")
-        subtitle.setWordWrap(True)
-        subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setFont(QFont("Segoe UI", 12))
-        subtitle.setStyleSheet(f"color: {COLORS['text_secondary']}; background: transparent;")
-        layout.addWidget(subtitle)
+        layout.addStretch(1)
 
         parent_layout.addWidget(header_card)
 
     def _build_control_panel(self, parent_layout):
         panel = GlassCard(glow_color=COLORS['glass_glow'])
+        panel.setMaximumHeight(360)
+        panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         layout = QVBoxLayout(panel)
         layout.setContentsMargins(24, 22, 24, 22)
@@ -860,8 +852,8 @@ class AdvisingDashboard(QMainWindow):
         self.email_body.setPlaceholderText("Plain text email. Use {term}, {first_name}, or {student_name}.")
         self.email_body.setAcceptRichText(False)
         self.email_body.setLineWrapMode(QTextEdit.WidgetWidth)
-        self.email_body.setMinimumHeight(118)
-        self.email_body.setMaximumHeight(140)
+        self.email_body.setMinimumHeight(88)
+        self.email_body.setMaximumHeight(100)
 
         default_body = (
             "Hello {first_name},\n\n"
@@ -926,15 +918,15 @@ class AdvisingDashboard(QMainWindow):
 
         self.needs_column = ColumnCard("Needs Advised (0)", COLORS['status_needed'])
         self.needs_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.needs_column.setMinimumHeight(760)
+        self.needs_column.setMinimumHeight(520)
 
         self.partial_column = ColumnCard("Advised (Not Complete) (0)", COLORS['status_partial'])
         self.partial_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.partial_column.setMinimumHeight(760)
+        self.partial_column.setMinimumHeight(520)
 
         self.done_column = ColumnCard("Advised (0)", COLORS['status_complete'])
         self.done_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.done_column.setMinimumHeight(760)
+        self.done_column.setMinimumHeight(520)
 
         controls = QHBoxLayout()
         controls.setSpacing(10)
