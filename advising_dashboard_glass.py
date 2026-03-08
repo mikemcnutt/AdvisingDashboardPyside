@@ -7,6 +7,7 @@ import json
 import platform
 import sys
 import html
+import re
 import uuid
 import threading
 import webbrowser
@@ -23,9 +24,9 @@ from PySide6.QtWidgets import (
     QFrame, QSizePolicy, QMessageBox, QFileDialog, QGridLayout, QGraphicsDropShadowEffect,
     QTextEdit
 )
-from PySide6.QtCore import Qt, QTimer, Signal, QSize, QRect, QPropertyAnimation, QEasingCurve, Property, QByteArray
+from PySide6.QtCore import Qt, QTimer, Signal, QSize, QRect, QRectF, QPropertyAnimation, QEasingCurve, Property, QByteArray
 from PySide6.QtGui import (
-    QFont, QPalette, QColor, QPainter, QPainterPath, QLinearGradient, 
+    QFont, QPalette, QColor, QPainter, QPainterPath, QLinearGradient, QRadialGradient,
     QBrush, QPen, QPixmap, QIcon
 )
 
@@ -270,9 +271,9 @@ class GlassCard(QFrame):
         # Purple-tinted frosted glass
         self.setStyleSheet(f"""
             QFrame {{
-                background-color: {COLORS['card_bg']};
-                border: {border_width}px solid {COLORS['glass_border']};
-                border-radius: 24px;
+                background-color: rgba(8, 11, 28, 0.52);
+                border: {border_width}px solid rgba(133, 150, 255, 0.34);
+                border-radius: 28px;
             }}
         """)
         
@@ -358,14 +359,14 @@ class StudentCard(QFrame):
         
         self.setStyleSheet(f"""
             QFrame {{
-                background-color: {COLORS['card_bg']};
-                border: 2px solid {COLORS['glass_border']};
-                border-radius: 14px;
+                background-color: rgba(10, 13, 31, 0.72);
+                border: 1px solid rgba(138, 154, 255, 0.32);
+                border-radius: 18px;
                 padding: 12px;
             }}
             QFrame:hover {{
-                background-color: {COLORS['card_hover']};
-                border: 2px solid {COLORS['glass_glow']};
+                background-color: rgba(20, 24, 58, 0.84);
+                border: 1px solid rgba(138, 170, 255, 0.75);
             }}
         """)
         
@@ -524,8 +525,8 @@ class ColumnCard(QFrame):
         
         # Header
         header = QFrame()
-        header.setMinimumHeight(70)
-        header.setMaximumHeight(70)
+        header.setMinimumHeight(86)
+        header.setMaximumHeight(86)
         header.setStyleSheet(f"""
             QFrame {{
                 background: rgba(255, 255, 255, 0.08);
@@ -574,14 +575,49 @@ class ColumnCard(QFrame):
         self.content = QWidget()
         self.content.setStyleSheet("background: transparent;")
         self.content_layout = QVBoxLayout(self.content)
-        self.content_layout.setContentsMargins(14, 14, 14, 14)
-        self.content_layout.setSpacing(10)
+        self.content_layout.setContentsMargins(16, 16, 16, 16)
+        self.content_layout.setSpacing(12)
         
         layout.addWidget(self.content)
     
     def set_title(self, title):
         if self.title_label:
             self.title_label.setText(title)
+
+
+class BloomBackground(QWidget):
+    """Paints a dark blue-purple gradient with soft bloom lighting."""
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        r = self.rect()
+
+        base = QLinearGradient(0, 0, 0, r.height())
+        base.setColorAt(0.0, QColor(COLORS["bg_gradient_1"]))
+        base.setColorAt(0.35, QColor(COLORS["bg_gradient_2"]))
+        base.setColorAt(0.7, QColor(COLORS["bg_gradient_3"]))
+        base.setColorAt(1.0, QColor(COLORS["bg_gradient_4"]))
+        painter.fillRect(r, base)
+
+        blooms = [
+            ((r.width() * 0.22, r.height() * 0.12), r.width() * 0.28, QColor(79, 140, 255, 40)),
+            ((r.width() * 0.78, r.height() * 0.18), r.width() * 0.24, QColor(139, 92, 246, 36)),
+            ((r.width() * 0.20, r.height() * 0.64), r.width() * 0.20, QColor(79, 140, 255, 44)),
+            ((r.width() * 0.82, r.height() * 0.68), r.width() * 0.18, QColor(139, 92, 246, 44)),
+            ((r.width() * 0.52, r.height() * 0.90), r.width() * 0.32, QColor(100, 120, 255, 34)),
+        ]
+        painter.setPen(Qt.NoPen)
+        for (cx, cy), radius, color in blooms:
+            grad = QRadialGradient(cx, cy, radius)
+            grad.setColorAt(0.0, color)
+            grad.setColorAt(0.45, QColor(color.red(), color.green(), color.blue(), max(10, color.alpha() // 2)))
+            grad.setColorAt(1.0, QColor(color.red(), color.green(), color.blue(), 0))
+            painter.setBrush(QBrush(grad))
+            painter.drawEllipse(QRectF(cx - radius, cy - radius, radius * 2, radius * 2))
+
+        painter.setBrush(Qt.NoBrush)
+        painter.setPen(QPen(QColor(255, 255, 255, 16), 2))
+        painter.drawRoundedRect(QRectF(24, 24, r.width() - 48, r.height() - 48), 30, 30)
 
 
 class AdvisingDashboard(QMainWindow):
@@ -642,204 +678,176 @@ class AdvisingDashboard(QMainWindow):
         self._apply_styles()
     
     def _setup_ui(self):
-        # Central widget with gradient background
-        central = QWidget()
+        central = BloomBackground()
         central.setObjectName("centralWidget")
         self.setCentralWidget(central)
-        
+
         main_layout = QVBoxLayout(central)
-        main_layout.setContentsMargins(18, 18, 18, 18)
-        main_layout.setSpacing(14)
-        
-        # Header
+        main_layout.setContentsMargins(28, 26, 28, 28)
+        main_layout.setSpacing(18)
+
         self._build_header(main_layout)
-        
-        # Control panel
         self._build_control_panel(main_layout)
-        
-        # Student columns
         self._build_columns(main_layout)
+
         main_layout.setStretch(0, 0)
         main_layout.setStretch(1, 0)
         main_layout.setStretch(2, 1)
     
     def _build_header(self, parent_layout):
-        header_card = GlassCard()
-        header_card.setMinimumHeight(86)
-        header_card.setMaximumHeight(86)
-        
+        header_card = GlassCard(glow_color=COLORS['glass_glow'])
+        header_card.setMinimumHeight(180)
+        header_card.setMaximumHeight(220)
+
         layout = QVBoxLayout(header_card)
-        layout.setAlignment(Qt.AlignCenter)
-        layout.setSpacing(6)
-        
-        # Main title with purple glow
-        title = QLabel(HEADER_TEXT)
-        title.setFont(QFont("Segoe UI", 24, QFont.Bold))
-        title.setStyleSheet(f"""
-            QLabel {{
-                color: {COLORS['text_primary']};
-                background: transparent;
-            }}
-        """)
+        layout.setContentsMargins(34, 28, 34, 28)
+        layout.setSpacing(10)
+
+        eyebrow = QLabel("ADVISING DASHBOARD")
+        eyebrow.setAlignment(Qt.AlignCenter)
+        eyebrow.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        eyebrow.setStyleSheet(f"color: {COLORS['text_muted']}; letter-spacing: 2px; background: transparent;")
+        layout.addWidget(eyebrow)
+
+        title = QLabel("One Dashboard to Rule Them All")
+        title.setWordWrap(True)
         title.setAlignment(Qt.AlignCenter)
-        
-        # Add purple glow effect
+        title.setFont(QFont("Segoe UI", 30, QFont.Bold))
+        title.setStyleSheet(f"color: {COLORS['text_primary']}; background: transparent;")
         title_shadow = QGraphicsDropShadowEffect()
-        title_shadow.setBlurRadius(50)
-        title_shadow.setColor(QColor(COLORS['accent_purple']))
+        title_shadow.setBlurRadius(48)
+        title_shadow.setColor(QColor(COLORS['accent_blue']))
         title_shadow.setOffset(0, 0)
         title.setGraphicsEffect(title_shadow)
-        
         layout.addWidget(title)
-        
+
+        subtitle = QLabel("Dark glass panels, blue-purple bloom, and larger advising queues designed to show more students at once.")
+        subtitle.setWordWrap(True)
+        subtitle.setAlignment(Qt.AlignCenter)
+        subtitle.setFont(QFont("Segoe UI", 12))
+        subtitle.setStyleSheet(f"color: {COLORS['text_secondary']}; background: transparent;")
+        layout.addWidget(subtitle)
+
         parent_layout.addWidget(header_card)
-    
+
     def _build_control_panel(self, parent_layout):
-        panel = GlassCard(glow_color=COLORS['glass_border'])
-        
+        panel = GlassCard(glow_color=COLORS['glass_glow'])
+
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(20, 18, 20, 18)
-        layout.setSpacing(14)
-        
-        # Top row
+        layout.setContentsMargins(24, 22, 24, 22)
+        layout.setSpacing(16)
+
         top_row = QHBoxLayout()
-        top_row.setSpacing(14)
-        
-        # Year
+        top_row.setSpacing(16)
+
         year_widget = self._create_control_group("Academic Year")
         self.year_combo = QComboBox()
         self.year_combo.addItems([str(y) for y in range(2026, 2041)])
         self.year_combo.setCurrentText(self.current_year)
         year_widget.layout().addWidget(self.year_combo)
-        top_row.addWidget(year_widget)
-        
-        # Semesters
-        sem_widget = self._create_control_group("Advising For")
+        top_row.addWidget(year_widget, 0)
+
+        sem_widget = self._create_control_group("Advising Terms")
         sem_checks = QHBoxLayout()
-        
+        sem_checks.setSpacing(14)
         self.spring_check = QCheckBox("Spring")
         self.spring_check.setChecked(self.spring_enabled)
         sem_checks.addWidget(self.spring_check)
-        
         self.summer_check = QCheckBox("Summer")
         self.summer_check.setChecked(self.summer_enabled)
         sem_checks.addWidget(self.summer_check)
-        
         self.fall_check = QCheckBox("Fall")
         self.fall_check.setChecked(self.fall_enabled)
         sem_checks.addWidget(self.fall_check)
-        
+        sem_checks.addStretch()
         sem_widget.layout().addLayout(sem_checks)
-        top_row.addWidget(sem_widget)
-        
-        # Quick button
+        top_row.addWidget(sem_widget, 1)
+
         quick_btn = GlassButton("Quick: Summer + Fall")
         quick_btn.clicked.connect(self._quick_pair)
-        quick_btn.setMaximumWidth(180)
-        top_row.addWidget(quick_btn)
-        
-        # Search
+        quick_btn.setMaximumWidth(220)
+        top_row.addWidget(quick_btn, 0)
+
         search_widget = self._create_control_group("Search")
         self.search_entry = QLineEdit()
         self.search_entry.setPlaceholderText("Name, ID, Email...")
         self.search_entry.textChanged.connect(self._on_search_changed)
         search_widget.layout().addWidget(self.search_entry)
         top_row.addWidget(search_widget, 1)
-        
-        # Track filter
+
         track_widget = self._create_control_group("Track Filter")
         self.track_combo = QComboBox()
-        tracks = ["All Tracks"] + [f"{k}: {v}" for k, v in sorted(TRACK_LABELS.items())]
-        self.track_combo.addItems(tracks)
+        self.track_combo.addItem("All Tracks")
         self.track_combo.setCurrentText(self.track_filter)
         self.track_combo.currentTextChanged.connect(self._on_filter_changed)
         track_widget.layout().addWidget(self.track_combo)
         top_row.addWidget(track_widget, 1)
-        
+
         layout.addLayout(top_row)
-        
-        # Folder row
-        folder_row = QHBoxLayout()
-        folder_row.setSpacing(10)
-        
+
+        middle_row = QHBoxLayout()
+        middle_row.setSpacing(12)
+
         folder_widget = self._create_control_group("Advising Folder")
         self.folder_entry = QLineEdit(self.folder_path)
         folder_widget.layout().addWidget(self.folder_entry)
-        folder_row.addWidget(folder_widget, 1)
-        
-        browse_btn = GlassButton("Browse...")
+        middle_row.addWidget(folder_widget, 1)
+
+        browse_btn = GlassButton("Browse")
         browse_btn.clicked.connect(self._browse_folder)
-        browse_btn.setMaximumWidth(110)
-        folder_row.addWidget(browse_btn)
-        
+        browse_btn.setMaximumWidth(120)
+        middle_row.addWidget(browse_btn)
+
         scan_btn = GlassButton("Scan Folder", glow_color=COLORS['status_complete'])
         scan_btn.clicked.connect(self._scan_folder)
-        scan_btn.setMaximumWidth(140)
-        folder_row.addWidget(scan_btn)
-        
-        layout.addLayout(folder_row)
-        
-        # Status with shadow
-        self.status_label = QLabel("Ready")
-        self.status_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        self.status_label.setStyleSheet(f"""
-            QLabel {{
-                color: {COLORS['text_primary']};
-                background: transparent;
-                font-style: italic;
-            }}
-        """)
-        self.status_label.setAlignment(Qt.AlignRight)
-        
-        # Add text shadow
-        status_shadow = QGraphicsDropShadowEffect()
-        status_shadow.setBlurRadius(12)
-        status_shadow.setColor(QColor(0, 0, 0, 100))
-        status_shadow.setOffset(0, 1)
-        self.status_label.setGraphicsEffect(status_shadow)
-        
-        layout.addWidget(self.status_label)
-        
-        # Email templates
-        email_row = QHBoxLayout()
-        email_row.setSpacing(20)
-        
+        scan_btn.setMaximumWidth(150)
+        middle_row.addWidget(scan_btn)
+
+        layout.addLayout(middle_row)
+
+        lower_row = QHBoxLayout()
+        lower_row.setSpacing(16)
+
         subj_widget = self._create_control_group("Email Subject")
         self.subject_entry = QLineEdit(self.email_subject)
         subj_widget.layout().addWidget(self.subject_entry)
-        email_row.addWidget(subj_widget, 1)
-        
+        lower_row.addWidget(subj_widget, 1)
+
         link_widget = self._create_control_group("Scheduling Link")
         self.link_entry = QLineEdit(self.scheduling_link)
         link_widget.layout().addWidget(self.link_entry)
-        email_row.addWidget(link_widget, 1)
-        
-        layout.addLayout(email_row)
-        
-        # Email body text area
+        lower_row.addWidget(link_widget, 1)
+
+        self.status_label = QLabel("Ready")
+        self.status_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        self.status_label.setStyleSheet(f"color: {COLORS['text_secondary']}; background: transparent; padding-top: 8px;")
+        lower_row.addWidget(self.status_label, 0, Qt.AlignBottom)
+
+        layout.addLayout(lower_row)
+
         body_widget = self._create_control_group("Email Body (plain text)")
         self.email_body = QTextEdit()
         self.email_body.setPlaceholderText("Plain text email. Use {term}, {first_name}, or {student_name}.")
         self.email_body.setAcceptRichText(False)
         self.email_body.setLineWrapMode(QTextEdit.WidgetWidth)
-        self.email_body.setMinimumHeight(86)
-        self.email_body.setMaximumHeight(110)
-        
-        # Load saved body or use default
+        self.email_body.setMinimumHeight(118)
+        self.email_body.setMaximumHeight(140)
+
         default_body = (
             "Hello {first_name},\n\n"
             "This is a reminder that you need to complete your advising appointment for {term}.\n\n"
             "Please schedule your appointment at your earliest convenience.\n\n"
             "Thank you!"
         )
-        saved_body = self.settings.get("email_body", default_body)
+        saved_body = html_to_plain_text(self.settings.get("email_body", default_body))
+        if not saved_body:
+            saved_body = default_body
         self.email_body.setPlainText(saved_body)
-        
         body_widget.layout().addWidget(self.email_body)
         layout.addWidget(body_widget)
-        
+
         parent_layout.addWidget(panel)
-    
+
     def _create_control_group(self, label_text):
         """Create a labeled control group"""
         widget = QWidget()
@@ -870,244 +878,174 @@ class AdvisingDashboard(QMainWindow):
     
     def _build_columns(self, parent_layout):
         columns_layout = QGridLayout()
-        columns_layout.setSpacing(16)
-        
-        # Equal column widths with proper scaling
+        columns_layout.setHorizontalSpacing(18)
+        columns_layout.setVerticalSpacing(18)
         columns_layout.setColumnStretch(0, 1)
         columns_layout.setColumnStretch(1, 1)
         columns_layout.setColumnStretch(2, 1)
-        
-        # Three glowing columns
+
         self.needs_column = ColumnCard("Needs Advised (0)", COLORS['status_needed'])
         self.needs_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.needs_column.setMinimumHeight(560)
-        
+        self.needs_column.setMinimumHeight(760)
+
         self.partial_column = ColumnCard("Advised (Not Complete) (0)", COLORS['status_partial'])
         self.partial_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.partial_column.setMinimumHeight(560)
-        
+        self.partial_column.setMinimumHeight(760)
+
         self.done_column = ColumnCard("Advised (0)", COLORS['status_complete'])
         self.done_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.done_column.setMinimumHeight(560)
-        
-        # Add controls to needs column
+        self.done_column.setMinimumHeight(760)
+
         controls = QHBoxLayout()
-        controls.setSpacing(12)
-        
+        controls.setSpacing(10)
         select_all_btn = GlassButton("Select All")
         select_all_btn.clicked.connect(self._select_all_needs)
-        select_all_btn.setMaximumWidth(120)
+        select_all_btn.setMaximumWidth(112)
         controls.addWidget(select_all_btn)
-        
+
         select_none_btn = GlassButton("Select None")
         select_none_btn.clicked.connect(self._select_none_needs)
-        select_none_btn.setMaximumWidth(120)
+        select_none_btn.setMaximumWidth(118)
         controls.addWidget(select_none_btn)
-        
         controls.addStretch()
-        
+
         draft_btn = GlassButton("Create Draft")
         draft_btn.clicked.connect(lambda: self._email_selected_needs(True))
         draft_btn.setMaximumWidth(130)
         controls.addWidget(draft_btn)
-        
+
         send_btn = GlassButton("Send Email", glow_color=COLORS['status_needed'])
         send_btn.clicked.connect(lambda: self._email_selected_needs(False))
         send_btn.setMaximumWidth(130)
         controls.addWidget(send_btn)
-        
         self.needs_column.content_layout.addLayout(controls)
-        
-        # Scrollable areas with custom styling
+
         self.needs_scroll = self._create_scroll_area()
         self.needs_list = QWidget()
         self.needs_list.setStyleSheet("background: transparent;")
         self.needs_list_layout = QVBoxLayout(self.needs_list)
         self.needs_list_layout.setAlignment(Qt.AlignTop)
-        self.needs_list_layout.setSpacing(10)
+        self.needs_list_layout.setSpacing(12)
         self.needs_scroll.setWidget(self.needs_list)
         self.needs_column.content_layout.addWidget(self.needs_scroll, 1)
-        
+
         self.partial_scroll = self._create_scroll_area()
         self.partial_list = QWidget()
         self.partial_list.setStyleSheet("background: transparent;")
         self.partial_list_layout = QVBoxLayout(self.partial_list)
         self.partial_list_layout.setAlignment(Qt.AlignTop)
-        self.partial_list_layout.setSpacing(10)
+        self.partial_list_layout.setSpacing(12)
         self.partial_scroll.setWidget(self.partial_list)
         self.partial_column.content_layout.addWidget(self.partial_scroll, 1)
-        
+
         self.done_scroll = self._create_scroll_area()
         self.done_list = QWidget()
         self.done_list.setStyleSheet("background: transparent;")
         self.done_list_layout = QVBoxLayout(self.done_list)
         self.done_list_layout.setAlignment(Qt.AlignTop)
-        self.done_list_layout.setSpacing(10)
+        self.done_list_layout.setSpacing(12)
         self.done_scroll.setWidget(self.done_list)
         self.done_column.content_layout.addWidget(self.done_scroll, 1)
-        
+
         columns_layout.addWidget(self.needs_column, 0, 0)
         columns_layout.addWidget(self.partial_column, 0, 1)
         columns_layout.addWidget(self.done_column, 0, 2)
-        
+
         parent_layout.addLayout(columns_layout, 1)
-    
+
     def _create_scroll_area(self):
         """Create a styled scroll area"""
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll.setStyleSheet("background: transparent;")
         return scroll
     
     def _apply_styles(self):
-        # Global stylesheet with dark purple/blue theme
         self.setStyleSheet(f"""
-            QMainWindow {{
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 {COLORS['bg_gradient_1']},
-                    stop:0.33 {COLORS['bg_gradient_2']},
-                    stop:0.66 {COLORS['bg_gradient_3']},
-                    stop:1 {COLORS['bg_gradient_4']});
-            }}
-            
-            #centralWidget {{
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                    stop:0 {COLORS['bg_gradient_1']},
-                    stop:0.33 {COLORS['bg_gradient_2']},
-                    stop:0.66 {COLORS['bg_gradient_3']},
-                    stop:1 {COLORS['bg_gradient_4']});
-            }}
-            
-            QWidget {{
-                color: {COLORS['text_primary']};
-            }}
-            
-            QLineEdit {{
-                background-color: {COLORS['card_bg']};
-                color: {COLORS['text_primary']};
-                border: 2px solid {COLORS['glass_border']};
-                border-radius: 12px;
-                padding: 10px 16px;
-                font-size: 11pt;
-                font-weight: 500;
-                selection-background-color: {COLORS['accent_purple']};
-            }}
-            QLineEdit:focus {{
-                border-color: {COLORS['accent_purple']};
-                background-color: {COLORS['card_hover']};
-                box-shadow: 0 0 20px {COLORS['glass_glow']};
-            }}
-            QLineEdit::placeholder {{
-                color: {COLORS['text_muted']};
-            }}
-            
-            QTextEdit {{
-                background-color: {COLORS['card_bg']};
-                color: {COLORS['text_primary']};
-                border: 2px solid {COLORS['glass_border']};
-                border-radius: 12px;
-                padding: 12px;
-                font-size: 11pt;
-                font-weight: 500;
-                selection-background-color: {COLORS['accent_purple']};
-            }}
-            QTextEdit:focus {{
-                border-color: {COLORS['accent_purple']};
-                background-color: {COLORS['card_hover']};
-            }}
-            
-            QComboBox {{
-                background-color: {COLORS['card_bg']};
-                color: {COLORS['text_primary']};
-                border: 2px solid {COLORS['glass_border']};
-                border-radius: 12px;
-                padding: 8px 16px;
-                font-size: 11pt;
-                font-weight: 500;
-                min-height: 28px;
-            }}
-            QComboBox:hover {{
-                border-color: {COLORS['accent_purple']};
-                background-color: {COLORS['card_hover']};
-            }}
-            QComboBox::drop-down {{
-                border: none;
-                padding-right: 10px;
-            }}
-            QComboBox::down-arrow {{
-                image: none;
-                border: none;
-            }}
-            QComboBox QAbstractItemView {{
-                background-color: rgba(30, 20, 60, 0.95);
-                color: {COLORS['text_primary']};
-                selection-background-color: {COLORS['accent_purple']};
-                border: 2px solid {COLORS['glass_border']};
-                border-radius: 10px;
-                padding: 5px;
-                font-weight: 500;
-            }}
-            
-            QCheckBox {{
-                color: {COLORS['text_primary']};
-                spacing: 10px;
+            QMainWindow, #centralWidget {{
                 background: transparent;
-                font-size: 11pt;
-                font-weight: 500;
             }}
-            QCheckBox::indicator {{
-                width: 24px;
-                height: 24px;
-                border-radius: 8px;
-                border: 2px solid {COLORS['glass_border']};
-                background-color: {COLORS['card_bg']};
-            }}
-            QCheckBox::indicator:checked {{
-                background-color: {COLORS['accent_purple']};
-                border-color: {COLORS['accent_purple']};
-            }}
-            QCheckBox::indicator:hover {{
-                border-color: {COLORS['accent_purple']};
-                background-color: {COLORS['card_hover']};
-            }}
-            
+
             QLabel {{
                 background: transparent;
             }}
-            
+
+            QLineEdit, QComboBox, QTextEdit {{
+                background-color: rgba(8, 10, 28, 0.70);
+                color: {COLORS['text_primary']};
+                border: 1px solid rgba(138, 154, 255, 0.35);
+                border-radius: 16px;
+                padding: 12px 14px;
+                selection-background-color: rgba(99, 102, 241, 0.55);
+                font-size: 14px;
+            }}
+
+            QLineEdit:focus, QComboBox:focus, QTextEdit:focus {{
+                border: 1px solid rgba(126, 165, 255, 0.75);
+                background-color: rgba(10, 14, 36, 0.82);
+            }}
+
+            QComboBox::drop-down {{
+                border: none;
+                width: 26px;
+                background: transparent;
+            }}
+
+            QComboBox QAbstractItemView {{
+                background-color: rgba(10, 14, 32, 0.96);
+                color: {COLORS['text_primary']};
+                border: 1px solid rgba(138, 154, 255, 0.35);
+                padding: 8px;
+                selection-background-color: rgba(99, 102, 241, 0.50);
+            }}
+
+            QCheckBox {{
+                color: {COLORS['text_primary']};
+                spacing: 8px;
+                font-size: 14px;
+            }}
+
+            QCheckBox::indicator {{
+                width: 18px;
+                height: 18px;
+                border-radius: 9px;
+                border: 1px solid rgba(170, 186, 255, 0.40);
+                background-color: rgba(255, 255, 255, 0.06);
+            }}
+
+            QCheckBox::indicator:checked {{
+                background-color: rgba(102, 123, 255, 0.65);
+                border: 1px solid rgba(192, 202, 255, 0.75);
+            }}
+
             QScrollArea {{
                 background: transparent;
                 border: none;
             }}
-            
+
             QScrollBar:vertical {{
-                background-color: rgba(100, 80, 180, 0.1);
+                background: rgba(0, 0, 0, 0.18);
                 width: 12px;
+                margin: 2px 0 2px 0;
                 border-radius: 6px;
-                margin: 0px;
             }}
+
             QScrollBar::handle:vertical {{
-                background-color: {COLORS['accent_purple']};
+                background: rgba(121, 139, 255, 0.55);
+                min-height: 28px;
                 border-radius: 6px;
-                min-height: 30px;
             }}
-            QScrollBar::handle:vertical:hover {{
-                background-color: {COLORS['accent_blue']};
-            }}
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-                height: 0px;
-            }}
+
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
                 background: none;
+                border: none;
+                height: 0px;
             }}
         """)
-    
-    def _quick_pair(self):
-        self.spring_check.setChecked(False)
-        self.summer_check.setChecked(True)
-        self.fall_check.setChecked(True)
-    
+
     def _browse_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "Select Advising Folder")
         if folder:
@@ -1244,8 +1182,26 @@ class AdvisingDashboard(QMainWindow):
             self.snapshots.append(snap)
 
         self.status_label.setText(f"Scanned {len(self.snapshots)} files")
+        self._refresh_track_filter_options()
         self._populate_lists()
     
+    def _refresh_track_filter_options(self):
+        current = self.track_combo.currentText() if hasattr(self, "track_combo") else "All Tracks"
+        tracks = sorted({track_filter_value(s) for s in self.snapshots if track_filter_value(s)})
+
+        self.track_combo.blockSignals(True)
+        self.track_combo.clear()
+        self.track_combo.addItem("All Tracks")
+        self.track_combo.addItems(tracks)
+
+        preferred = self.track_filter if self.track_filter in tracks or self.track_filter == "All Tracks" else current
+        if preferred in tracks or preferred == "All Tracks":
+            self.track_combo.setCurrentText(preferred)
+        else:
+            self.track_combo.setCurrentIndex(0)
+
+        self.track_combo.blockSignals(False)
+
     def _on_search_changed(self):
         self._populate_lists()
     
@@ -1286,7 +1242,7 @@ class AdvisingDashboard(QMainWindow):
                     continue
             
             if track_filter != "All Tracks":
-                if not track_filter.startswith(s.track + ":"):
+                if track_filter_value(s) != track_filter:
                     continue
             
             filtered.append(s)
@@ -1458,7 +1414,7 @@ class AdvisingDashboard(QMainWindow):
     
     def _build_email_body(self, student: Optional[SnapshotInfo] = None) -> str:
         term = self._term_label()
-        body_template = self.email_body.toPlainText().strip()
+        body_template = html_to_plain_text(self.email_body.toPlainText()).strip()
         first_name = "Student"
         student_name = "Student"
         if student is not None:
@@ -1488,7 +1444,7 @@ class AdvisingDashboard(QMainWindow):
             "last_track_filter": self.track_combo.currentText(),
             "subject": self.subject_entry.text(),
             "schedulingLink": self.link_entry.text(),
-            "email_body": self.email_body.toPlainText(),
+            "email_body": html_to_plain_text(self.email_body.toPlainText()),
             "window_geometry": self.saveGeometry().toBase64().data().decode(),
             "window_state": "maximized" if self.isMaximized() else "normal"
         }
