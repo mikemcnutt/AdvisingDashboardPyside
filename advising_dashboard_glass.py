@@ -89,6 +89,18 @@ TRACK_LABELS = {
     "PR": "Programming",
 }
 
+INPUT_WIDGET_STYLE = """
+    background-color: #ffffff;
+    color: #355cff;
+    border: 1px solid rgba(138, 154, 255, 0.55);
+    border-radius: 16px;
+    padding: 12px 14px;
+    selection-background-color: rgba(79, 140, 255, 0.22);
+    selection-color: #17306b;
+    font-size: 14px;
+    font-weight: 600;
+"""
+
 
 def app_base_dir() -> Path:
     if getattr(sys, "frozen", False):
@@ -482,8 +494,24 @@ class StudentCard(QFrame):
         
         # Email button
         if self.show_email_btn:
-            email_btn = GlassButton("Email", glow_color=COLORS['status_needed'])
+            email_btn = QPushButton("Email")
+            email_btn.setCursor(Qt.PointingHandCursor)
+            email_btn.setFocusPolicy(Qt.NoFocus)
             email_btn.setFixedSize(92, 34)
+            email_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {COLORS['button_bg']};
+                    color: {COLORS['text_primary']};
+                    border: 2px solid {COLORS['button_border']};
+                    border-radius: 17px;
+                    padding: 6px 16px;
+                    font: 700 10pt 'Segoe UI';
+                }}
+                QPushButton:hover {{
+                    background-color: {COLORS['button_hover']};
+                    border: 2px solid {COLORS['accent_blue']};
+                }}
+            """)
             top_row.addWidget(email_btn)
         
         # Student ID
@@ -664,17 +692,20 @@ class AdvisingDashboard(QMainWindow):
         
         self.setWindowTitle(APP_TITLE)
         
-        # Set initial size to Full HD (1920x1080)
-        self.resize(1920, 1080)
-        
+        # Default to slightly under the available screen height so the Windows taskbar
+        # does not make the bottom edge feel cut off.
+        screen = QApplication.primaryScreen().availableGeometry()
+        default_width = min(1920, max(1280, screen.width() - 40))
+        default_height = min(1040, max(720, screen.height() - 24))
+        self.resize(default_width, default_height)
+
         # Set minimum size for proper scaling
         self.setMinimumSize(1280, 720)
-        
+
         # Center window on screen
-        screen = QApplication.primaryScreen().geometry()
-        x = (screen.width() - 1920) // 2
-        y = (screen.height() - 1080) // 2
-        self.move(max(0, x), max(0, y))
+        x = screen.x() + max(0, (screen.width() - default_width) // 2)
+        y = screen.y() + max(0, (screen.height() - default_height) // 2)
+        self.move(x, y)
         
         # Variables
         self.snapshots: List[SnapshotInfo] = []
@@ -801,6 +832,7 @@ class AdvisingDashboard(QMainWindow):
         search_widget = self._create_control_group("Search")
         self.search_entry = QLineEdit()
         self.search_entry.setPlaceholderText("Name, ID, Email...")
+        self.search_entry.setStyleSheet(f"QLineEdit {{{INPUT_WIDGET_STYLE}}}")
         self.search_entry.textChanged.connect(self._on_search_changed)
         search_widget.layout().addWidget(self.search_entry)
         top_row.addWidget(search_widget, 1)
@@ -808,6 +840,22 @@ class AdvisingDashboard(QMainWindow):
         track_widget = self._create_control_group("Track Filter")
         self.track_combo = QComboBox()
         self.track_combo.addItem("All Tracks")
+        self.track_combo.setStyleSheet(f"""
+            QComboBox {{{INPUT_WIDGET_STYLE}}}
+            QComboBox QAbstractItemView {{
+                background-color: #ffffff;
+                color: #355cff;
+                border: 1px solid rgba(138, 154, 255, 0.45);
+                selection-background-color: rgba(79, 140, 255, 0.14);
+                selection-color: #17306b;
+                outline: 0;
+            }}
+            QComboBox::drop-down {{
+                border: none;
+                width: 26px;
+                background: transparent;
+            }}
+        """)
         self.track_combo.setCurrentText(self.track_filter)
         self.track_combo.currentTextChanged.connect(self._on_filter_changed)
         self.year_combo.currentTextChanged.connect(self._populate_lists)
@@ -824,6 +872,7 @@ class AdvisingDashboard(QMainWindow):
 
         folder_widget = self._create_control_group("Advising Folder")
         self.folder_entry = QLineEdit(self.folder_path)
+        self.folder_entry.setStyleSheet(f"QLineEdit {{{INPUT_WIDGET_STYLE}}}")
         folder_widget.layout().addWidget(self.folder_entry)
         middle_row.addWidget(folder_widget, 1)
 
@@ -844,11 +893,13 @@ class AdvisingDashboard(QMainWindow):
 
         subj_widget = self._create_control_group("Email Subject")
         self.subject_entry = QLineEdit(self.email_subject)
+        self.subject_entry.setStyleSheet(f"QLineEdit {{{INPUT_WIDGET_STYLE}}}")
         subj_widget.layout().addWidget(self.subject_entry)
         lower_row.addWidget(subj_widget, 1)
 
         link_widget = self._create_control_group("Scheduling Link")
         self.link_entry = QLineEdit(self.scheduling_link)
+        self.link_entry.setStyleSheet(f"QLineEdit {{{INPUT_WIDGET_STYLE}}}")
         link_widget.layout().addWidget(self.link_entry)
         lower_row.addWidget(link_widget, 1)
 
@@ -862,6 +913,7 @@ class AdvisingDashboard(QMainWindow):
         body_widget = self._create_control_group("Email Body (plain text)")
         self.email_body = QTextEdit()
         self.email_body.setPlaceholderText("Plain text email. Use {term}, {first_name}, or {student_name}.")
+        self.email_body.setStyleSheet(f"QTextEdit {{{INPUT_WIDGET_STYLE}}}")
         self.email_body.setAcceptRichText(False)
         self.email_body.setLineWrapMode(QTextEdit.WidgetWidth)
         self.email_body.setMinimumHeight(88)
