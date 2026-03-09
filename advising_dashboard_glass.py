@@ -381,6 +381,40 @@ class GlassButton(QPushButton):
         super().leaveEvent(event)
 
 
+
+class XCheckBox(QCheckBox):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setCursor(Qt.PointingHandCursor)
+        self.setFixedSize(22, 22)
+        self.setStyleSheet("QCheckBox { spacing: 0; background: transparent; } QCheckBox::indicator { width: 0px; height: 0px; }")
+
+    def sizeHint(self):
+        return QSize(22, 22)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        r = self.rect().adjusted(1, 1, -1, -1)
+
+        fill = QColor(255, 255, 255, 28)
+        border = QColor(255, 255, 255, 102)
+        if self.isChecked():
+            fill = QColor(102, 123, 255, 180)
+            border = QColor(210, 220, 255, 220)
+        elif self.underMouse():
+            border = QColor(210, 220, 255, 160)
+
+        painter.setPen(QPen(border, 2))
+        painter.setBrush(fill)
+        painter.drawRoundedRect(r, 7, 7)
+
+        if self.isChecked():
+            painter.setPen(QPen(QColor("#ffffff"), 2.4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            painter.setFont(QFont("Segoe UI", 11, QFont.Bold))
+            painter.drawText(r, Qt.AlignCenter, "×")
+
+
 class StudentCard(QFrame):
     """Student card with soft glass effect"""
     clicked = Signal(object)
@@ -408,7 +442,7 @@ class StudentCard(QFrame):
             }}
         """)
         
-        self.setMinimumHeight(96)
+        self.setMinimumHeight(110)
         self.setCursor(Qt.PointingHandCursor)
         
         # Stronger shadow for better separation
@@ -430,23 +464,7 @@ class StudentCard(QFrame):
         top_row.setSpacing(10)
         
         if self.show_checkbox:
-            self.checkbox = QCheckBox()
-            self.checkbox.setStyleSheet(f"""
-                QCheckBox::indicator {{
-                    width: 22px;
-                    height: 22px;
-                    border-radius: 7px;
-                    border: 2px solid rgba(255, 255, 255, 0.4);
-                    background-color: rgba(255, 255, 255, 0.1);
-                }}
-                QCheckBox::indicator:checked {{
-                    background-color: rgba(255, 255, 255, 0.35);
-                    border-color: rgba(255, 255, 255, 0.6);
-                }}
-                QCheckBox::indicator:hover {{
-                    border-color: rgba(255, 255, 255, 0.6);
-                }}
-            """)
+            self.checkbox = XCheckBox()
             top_row.addWidget(self.checkbox)
         
         # Name
@@ -535,15 +553,15 @@ class StudentCard(QFrame):
         
         # Badges with better contrast
         badges_label = QLabel("  ".join(self.student.badges))
-        badges_label.setFont(QFont("Segoe UI", 9, QFont.Bold))
+        badges_label.setFont(QFont("Segoe UI", 10, QFont.DemiBold))
         badges_label.setStyleSheet(f"""
-            QLabel {{
-                color: #f8fbff;
-                background-color: rgba(0, 0, 0, 0.62);
-                border: 1px solid rgba(138, 154, 255, 0.28);
+            QLabel {
+                color: #ffffff;
+                background-color: rgba(2, 5, 18, 0.92);
+                border: 1px solid rgba(108, 129, 255, 0.42);
                 border-radius: 10px;
-                padding: 7px 10px;
-            }}
+                padding: 8px 12px;
+            }
         """)
         
         # Add text shadow
@@ -765,12 +783,12 @@ class AdvisingDashboard(QMainWindow):
     
     def _build_header(self, parent_layout):
         header_card = GlassCard(glow_color=COLORS['glass_glow'])
-        header_card.setMinimumHeight(104)
-        header_card.setMaximumHeight(118)
+        header_card.setMinimumHeight(88)
+        header_card.setMaximumHeight(96)
         header_card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         layout = QVBoxLayout(header_card)
-        layout.setContentsMargins(34, 18, 34, 18)
+        layout.setContentsMargins(34, 10, 34, 10)
         layout.setSpacing(0)
 
         title_row = QHBoxLayout()
@@ -781,7 +799,7 @@ class AdvisingDashboard(QMainWindow):
         title.setWordWrap(False)
         title.setAlignment(Qt.AlignCenter)
         title.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
-        title.setFont(QFont("Segoe UI", 28, QFont.Bold))
+        title.setFont(QFont("Segoe UI", 24, QFont.Bold))
         title.setStyleSheet(f"""
             color: {COLORS['text_primary']};
             background: transparent;
@@ -1465,18 +1483,23 @@ class AdvisingDashboard(QMainWindow):
                 header.setFont(QFont("Segoe UI", 12, QFont.Bold))
                 header.setStyleSheet(f"""
                     QLabel {{
-                        background-color: rgba(255, 255, 255, 0.25);
                         color: {COLORS['text_primary']};
-                        padding: 10px;
-                        border-radius: 10px;
-                        border: 2px solid rgba(255, 255, 255, 0.3);
+                        padding: 10px 14px;
+                        border-radius: 14px;
+                        border: 1px solid rgba(148, 166, 255, 0.42);
+                        background: qlineargradient(
+                            x1:0, y1:0, x2:1, y2:0,
+                            stop:0 rgba(40, 62, 168, 0.92),
+                            stop:0.55 rgba(66, 58, 168, 0.92),
+                            stop:1 rgba(89, 50, 156, 0.92)
+                        );
                     }}
                 """)
                 
                 # Add text shadow
                 header_shadow = QGraphicsDropShadowEffect()
-                header_shadow.setBlurRadius(15)
-                header_shadow.setColor(QColor(0, 0, 0, 120))
+                header_shadow.setBlurRadius(20)
+                header_shadow.setColor(QColor(35, 20, 100, 110))
                 header_shadow.setOffset(0, 1)
                 header.setGraphicsEffect(header_shadow)
                 
