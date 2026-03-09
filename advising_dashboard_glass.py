@@ -1219,14 +1219,22 @@ class AdvisingDashboard(QMainWindow):
             self.folder_entry.setText(folder)
     
     def _scan_folder(self):
-        folder = Path(self.folder_entry.text().strip())
+        folder_text = self.folder_entry.text().strip()
+        if not folder_text:
+            chosen = QFileDialog.getExistingDirectory(self, "Select Advising Folder")
+            if not chosen:
+                return
+            self.folder_entry.setText(chosen)
+            folder_text = chosen
+
+        folder = Path(folder_text)
         if not folder.is_dir():
             QMessageBox.critical(self, "Error", "Please select a valid advising folder.")
             return
-        
+
         self.status_label.setText("Scanning...")
         QApplication.processEvents()
-        
+
         self.snapshots.clear()
         self.needs_checks.clear()
         
@@ -1243,7 +1251,13 @@ class AdvisingDashboard(QMainWindow):
             self.status_label.setText("Ready")
             return
         
-        json_files = list(folder.rglob("*.json"))
+        json_files = list(folder.rglob("*.json")) + list(folder.rglob("*.JSON"))
+        if not json_files:
+            self.status_label.setText("Scanned 0 files")
+            self._refresh_track_filter_options()
+            self._populate_lists()
+            QMessageBox.information(self, "No JSON Files", "No JSON files were found in that folder.")
+            return
 
         for jf in json_files:
             try:
@@ -1349,7 +1363,11 @@ class AdvisingDashboard(QMainWindow):
             self.snapshots.append(snap)
 
         self.status_label.setText(f"Scanned {len(self.snapshots)} files")
+        if self.search_entry.text().strip():
+            self.search_entry.clear()
+        self.track_filter = "All Tracks"
         self._refresh_track_filter_options()
+        self.track_combo.setCurrentIndex(0)
         self._populate_lists()
     
     def _refresh_track_filter_options(self):
