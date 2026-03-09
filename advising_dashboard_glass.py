@@ -696,7 +696,7 @@ class AdvisingDashboard(QMainWindow):
         # does not make the bottom edge feel cut off.
         screen = QApplication.primaryScreen().availableGeometry()
         default_width = min(1920, max(1280, screen.width() - 40))
-        default_height = min(1040, max(720, screen.height() - 24))
+        default_height = min(1028, max(720, screen.height() - 40))
         self.resize(default_width, default_height)
 
         # Set minimum size for proper scaling
@@ -752,7 +752,7 @@ class AdvisingDashboard(QMainWindow):
         self.setCentralWidget(central)
 
         main_layout = QVBoxLayout(central)
-        main_layout.setContentsMargins(28, 26, 28, 28)
+        main_layout.setContentsMargins(28, 26, 28, 26)
         main_layout.setSpacing(18)
 
         self._build_header(main_layout)
@@ -773,18 +773,32 @@ class AdvisingDashboard(QMainWindow):
         layout.setContentsMargins(34, 18, 34, 18)
         layout.setSpacing(0)
 
+        title_row = QHBoxLayout()
+        title_row.setContentsMargins(0, 0, 0, 0)
+        title_row.addStretch(1)
+
         title = QLabel("One Dashboard to Rule Them All")
         title.setWordWrap(False)
         title.setAlignment(Qt.AlignCenter)
+        title.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
         title.setFont(QFont("Segoe UI", 28, QFont.Bold))
-        title.setStyleSheet(f"color: {COLORS['text_primary']}; background: transparent;")
+        title.setStyleSheet(f"""
+            color: {COLORS['text_primary']};
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+        """)
         title_shadow = QGraphicsDropShadowEffect()
         title_shadow.setBlurRadius(42)
         title_shadow.setColor(QColor(COLORS['accent_blue']))
         title_shadow.setOffset(0, 0)
         title.setGraphicsEffect(title_shadow)
+        title_row.addWidget(title, 0, Qt.AlignCenter)
+        title_row.addStretch(1)
+
         layout.addStretch(1)
-        layout.addWidget(title)
+        layout.addLayout(title_row)
         layout.addStretch(1)
 
         parent_layout.addWidget(header_card)
@@ -805,6 +819,22 @@ class AdvisingDashboard(QMainWindow):
         self.year_combo = QComboBox()
         self.year_combo.addItems([str(y) for y in range(2026, 2041)])
         self.year_combo.setCurrentText(self.current_year)
+        self.year_combo.setStyleSheet(f"""
+            QComboBox {{{INPUT_WIDGET_STYLE}}}
+            QComboBox QAbstractItemView {{
+                background-color: #ffffff;
+                color: #355cff;
+                border: 1px solid rgba(138, 154, 255, 0.45);
+                selection-background-color: rgba(79, 140, 255, 0.14);
+                selection-color: #17306b;
+                outline: 0;
+            }}
+            QComboBox::drop-down {{
+                border: none;
+                width: 26px;
+                background: transparent;
+            }}
+        """)
         year_widget.layout().addWidget(self.year_combo)
         top_row.addWidget(year_widget, 0)
 
@@ -905,7 +935,7 @@ class AdvisingDashboard(QMainWindow):
 
         self.status_label = QLabel("Ready")
         self.status_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        self.status_label.setStyleSheet(f"color: {COLORS['text_secondary']}; background: transparent; padding-top: 8px;")
+        self.status_label.setStyleSheet(f"color: {COLORS['text_secondary']}; background: transparent; border: none; padding: 0; margin: 0;")
         lower_row.addWidget(self.status_label, 0, Qt.AlignBottom)
 
         layout.addLayout(lower_row)
@@ -958,15 +988,11 @@ class AdvisingDashboard(QMainWindow):
             QLabel {{
                 color: {COLORS['text_primary']};
                 background: transparent;
+                border: none;
+                padding: 0;
+                margin: 0;
             }}
         """)
-        
-        # Add text shadow for better readability
-        label_shadow = QGraphicsDropShadowEffect()
-        label_shadow.setBlurRadius(15)
-        label_shadow.setColor(QColor(0, 0, 0, 120))
-        label_shadow.setOffset(0, 1)
-        label.setGraphicsEffect(label_shadow)
         
         layout.addWidget(label)
         
@@ -1064,9 +1090,10 @@ class AdvisingDashboard(QMainWindow):
                 background: transparent;
             }}
 
-            QLabel {{
+            QLabel {
                 background: transparent;
-            }}
+                border: none;
+            }
 
             QLineEdit, QComboBox, QTextEdit {{
                 background-color: #ffffff;
@@ -1114,13 +1141,14 @@ class AdvisingDashboard(QMainWindow):
                 background: transparent;
             }}
 
-            QComboBox QAbstractItemView {{
-                background-color: rgba(10, 14, 32, 0.96);
-                color: {COLORS['text_primary']};
-                border: 1px solid rgba(138, 154, 255, 0.35);
+            QComboBox QAbstractItemView {
+                background-color: #ffffff;
+                color: #355cff;
+                border: 1px solid rgba(138, 154, 255, 0.45);
                 padding: 8px;
-                selection-background-color: rgba(99, 102, 241, 0.50);
-            }}
+                selection-background-color: rgba(79, 140, 255, 0.14);
+                selection-color: #17306b;
+            }
 
             QCheckBox {{
                 color: {COLORS['text_primary']};
