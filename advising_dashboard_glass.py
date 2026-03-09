@@ -1259,10 +1259,17 @@ class AdvisingDashboard(QMainWindow):
             QMessageBox.information(self, "No JSON Files", "No JSON files were found in that folder.")
             return
 
+        parse_errors = []
         for jf in json_files:
-            try:
-                data = json.loads(jf.read_text(encoding="utf-8"))
-            except Exception:
+            data = None
+            for enc in ("utf-8", "utf-8-sig", "cp1252"):
+                try:
+                    data = json.loads(jf.read_text(encoding=enc))
+                    break
+                except Exception:
+                    data = None
+            if not isinstance(data, dict):
+                parse_errors.append(jf.name)
                 continue
 
             student_block = data.get("student", {}) if isinstance(data.get("student"), dict) else {}
@@ -1362,13 +1369,22 @@ class AdvisingDashboard(QMainWindow):
             )
             self.snapshots.append(snap)
 
-        self.status_label.setText(f"Scanned {len(self.snapshots)} files")
+        self.status_label.setText(f"Loaded {len(self.snapshots)} students from {len(json_files)} JSON files")
         if self.search_entry.text().strip():
             self.search_entry.clear()
         self.track_filter = "All Tracks"
         self._refresh_track_filter_options()
         self.track_combo.setCurrentIndex(0)
+        QApplication.processEvents()
         self._populate_lists()
+        QApplication.processEvents()
+        if not self.snapshots:
+            msg = "JSON files were found, but none could be parsed into student records."
+            if parse_errors:
+                msg += "
+
+Examples: " + ", ".join(parse_errors[:5])
+            QMessageBox.warning(self, "No Students Loaded", msg)
     
     def _refresh_track_filter_options(self):
         current = self.track_combo.currentText() if hasattr(self, "track_combo") else "All Tracks"
