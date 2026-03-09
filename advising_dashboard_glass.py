@@ -1090,10 +1090,10 @@ class AdvisingDashboard(QMainWindow):
                 background: transparent;
             }}
 
-            QLabel {
+            QLabel {{
                 background: transparent;
                 border: none;
-            }
+            }}
 
             QLineEdit, QComboBox, QTextEdit {{
                 background-color: #ffffff;
@@ -1141,14 +1141,14 @@ class AdvisingDashboard(QMainWindow):
                 background: transparent;
             }}
 
-            QComboBox QAbstractItemView {
+            QComboBox QAbstractItemView {{
                 background-color: #ffffff;
                 color: #355cff;
                 border: 1px solid rgba(138, 154, 255, 0.45);
                 padding: 8px;
                 selection-background-color: rgba(79, 140, 255, 0.14);
                 selection-color: #17306b;
-            }
+            }}
 
             QCheckBox {{
                 color: {COLORS['text_primary']};
