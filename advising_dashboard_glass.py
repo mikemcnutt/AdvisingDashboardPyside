@@ -1381,9 +1381,7 @@ class AdvisingDashboard(QMainWindow):
         if not self.snapshots:
             msg = "JSON files were found, but none could be parsed into student records."
             if parse_errors:
-                msg += "
-
-Examples: " + ", ".join(parse_errors[:5])
+                msg += "\n\nExamples: " + ", ".join(parse_errors[:5])
             QMessageBox.warning(self, "No Students Loaded", msg)
     
     def _refresh_track_filter_options(self):
