@@ -1,6 +1,7 @@
 """
-Advising Dashboard - Glassmorphism Design
-Beautiful frosted glass UI with glowing borders and modern aesthetics
+Advising Dashboard - Dark Purple/Blue Glassmorphism Theme
+Beautiful frosted glass UI with glowing purple effects
+Version: 2.1 - FIXED name parsing for firstName/lastName
 """
 
 import json
@@ -555,13 +556,13 @@ class StudentCard(QFrame):
         badges_label = QLabel("  ".join(self.student.badges))
         badges_label.setFont(QFont("Segoe UI", 10, QFont.DemiBold))
         badges_label.setStyleSheet(f"""
-            QLabel {
+            QLabel {{
                 color: #ffffff;
                 background-color: rgba(2, 5, 18, 0.92);
                 border: 1px solid rgba(108, 129, 255, 0.42);
                 border-radius: 10px;
                 padding: 8px 12px;
-            }
+            }}
         """)
         
         # Add text shadow
@@ -1259,28 +1260,44 @@ class AdvisingDashboard(QMainWindow):
             QMessageBox.information(self, "No JSON Files", "No JSON files were found in that folder.")
             return
 
-        parse_errors = []
         for jf in json_files:
-            data = None
-            for enc in ("utf-8", "utf-8-sig", "cp1252"):
-                try:
-                    data = json.loads(jf.read_text(encoding=enc))
-                    break
-                except Exception:
-                    data = None
-            if not isinstance(data, dict):
-                parse_errors.append(jf.name)
+            try:
+                data = json.loads(jf.read_text(encoding="utf-8"))
+            except Exception:
                 continue
 
             student_block = data.get("student", {}) if isinstance(data.get("student"), dict) else {}
             selection_block = data.get("selection", {}) if isinstance(data.get("selection"), dict) else {}
             data_block = data.get("data", {}) if isinstance(data.get("data"), dict) else {}
 
+            # FIXED: Comprehensive name parsing that handles all formats
+            first_name = ""
+            last_name = ""
+            student_name = ""
+            
+            # Try firstName/lastName fields first (preferred format)
             first_name = str(student_block.get("firstName") or data.get("firstName") or "").strip()
             last_name = str(student_block.get("lastName") or data.get("lastName") or "").strip()
-            student_name = " ".join(part for part in [first_name, last_name] if part).strip()
+            
+            # Build full name from first/last
+            if first_name or last_name:
+                student_name = " ".join(part for part in [first_name, last_name] if part).strip()
+            
+            # Fall back to single 'name' field if firstName/lastName are empty
             if not student_name:
-                student_name = str(data.get("studentName") or student_block.get("name") or jf.stem)
+                student_name = str(student_block.get("name") or data.get("studentName") or "").strip()
+                
+                # If we got a name from the single field, split it for email personalization
+                if student_name:
+                    name_parts = student_name.split(None, 1)  # Split on first space
+                    first_name = name_parts[0] if name_parts else student_name
+                    last_name = name_parts[1] if len(name_parts) > 1 else ""
+            
+            # Final fallback: use filename
+            if not student_name:
+                student_name = jf.stem
+                first_name = jf.stem
+                last_name = ""
 
             student_id = str(student_block.get("studentId") or data.get("studentId") or data.get("studentID") or "").strip()
             kctcs_email = str(student_block.get("kctcsEmail") or data.get("kctcsEmail") or "").strip()
@@ -1369,20 +1386,13 @@ class AdvisingDashboard(QMainWindow):
             )
             self.snapshots.append(snap)
 
-        self.status_label.setText(f"Loaded {len(self.snapshots)} students from {len(json_files)} JSON files")
+        self.status_label.setText(f"Scanned {len(self.snapshots)} student(s)")
         if self.search_entry.text().strip():
             self.search_entry.clear()
         self.track_filter = "All Tracks"
         self._refresh_track_filter_options()
         self.track_combo.setCurrentIndex(0)
-        QApplication.processEvents()
         self._populate_lists()
-        QApplication.processEvents()
-        if not self.snapshots:
-            msg = "JSON files were found, but none could be parsed into student records."
-            if parse_errors:
-                msg += "\n\nExamples: " + ", ".join(parse_errors[:5])
-            QMessageBox.warning(self, "No Students Loaded", msg)
     
     def _refresh_track_filter_options(self):
         current = self.track_combo.currentText() if hasattr(self, "track_combo") else "All Tracks"
