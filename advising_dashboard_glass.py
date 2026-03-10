@@ -1252,7 +1252,7 @@ class AdvisingDashboard(QMainWindow):
             self.status_label.setText("Ready")
             return
         
-        json_files = list(folder.rglob("*.json")) + list(folder.rglob("*.JSON"))
+        json_files = list({p.resolve() for p in folder.rglob("*.json")} | {p.resolve() for p in folder.rglob("*.JSON")})
         if not json_files:
             self.status_label.setText("Scanned 0 files")
             self._refresh_track_filter_options()
