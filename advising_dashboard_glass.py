@@ -363,32 +363,31 @@ class XCheckBox(QCheckBox):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setCursor(Qt.PointingHandCursor)
-        self.setFixedSize(22, 22)
+        self.setFixedSize(28, 28)
         self.setStyleSheet("QCheckBox { spacing: 0; background: transparent; } QCheckBox::indicator { width: 0px; height: 0px; }")
 
     def sizeHint(self):
-        return QSize(22, 22)
+        return QSize(28, 28)
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         r = self.rect().adjusted(1, 1, -1, -1)
-        fill = QColor(255, 255, 255, 22)
-        border = QColor(232, 238, 255, 128)
+        fill = QColor(255, 255, 255, 255)
+        border = QColor(79, 92, 168, 215)
         if self.isChecked():
-            fill = QColor(96, 118, 255, 245)
-            border = QColor(248, 250, 255, 255)
+            border = QColor(53, 92, 255, 255)
         elif self.underMouse():
-            border = QColor(232, 238, 255, 190)
+            border = QColor(98, 120, 210, 245)
 
-        painter.setPen(QPen(border, 2.2))
+        painter.setPen(QPen(border, 2.8))
         painter.setBrush(fill)
-        painter.drawRoundedRect(r, 7, 7)
+        painter.drawRoundedRect(r, 8, 8)
 
         if self.isChecked():
-            painter.setPen(QPen(QColor("#ffffff"), 3.6, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-            painter.drawLine(r.left() + 5, r.top() + 5, r.right() - 5, r.bottom() - 5)
-            painter.drawLine(r.right() - 5, r.top() + 5, r.left() + 5, r.bottom() - 5)
+            painter.setPen(QPen(QColor("#2c46c7"), 4.8, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            painter.drawLine(r.left() + 6, r.top() + 6, r.right() - 6, r.bottom() - 6)
+            painter.drawLine(r.right() - 6, r.top() + 6, r.left() + 6, r.bottom() - 6)
 
 
 class StudentCard(QFrame):
@@ -415,14 +414,14 @@ class StudentCard(QFrame):
         """
         self.selected_style = f"""
             QFrame {{
-                background-color: rgba(36, 42, 108, 0.88);
-                border: 2px solid rgba(188, 205, 255, 0.96);
+                background-color: rgba(58, 72, 178, 0.98);
+                border: 3px solid rgba(255, 255, 255, 1.0);
                 border-radius: 18px;
-                padding: 11px;
+                padding: 10px;
             }}
             QFrame:hover {{
-                background-color: rgba(46, 54, 128, 0.94);
-                border: 2px solid rgba(214, 226, 255, 1.0);
+                background-color: rgba(68, 84, 198, 1.0);
+                border: 3px solid rgba(255, 255, 255, 1.0);
             }}
         """
         self.setStyleSheet(self.default_style)
@@ -548,8 +547,8 @@ class StudentCard(QFrame):
     def _on_checked_changed(self, checked):
         if checked:
             self.setStyleSheet(self.selected_style)
-            self.shadow.setBlurRadius(28)
-            self.shadow.setColor(QColor(92, 108, 255, 165))
+            self.shadow.setBlurRadius(36)
+            self.shadow.setColor(QColor(114, 140, 255, 245))
             self.shadow.setOffset(0, 0)
         else:
             self.setStyleSheet(self.default_style)
