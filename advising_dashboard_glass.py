@@ -1,4 +1,3 @@
-
 """
 Advising Dashboard - Dark Purple/Blue Glassmorphism Theme
 Beautiful frosted glass UI with glowing purple effects
@@ -372,22 +371,33 @@ class XCheckBox(QCheckBox):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        r = self.rect().adjusted(1, 1, -1, -1)
-        fill = QColor(255, 255, 255, 255)
-        border = QColor(96, 110, 190, 235)
+        r = self.rect().adjusted(2, 2, -2, -2)
+        
+        # FIXED: Clear visual difference between checked and unchecked
         if self.isChecked():
-            border = QColor(25, 63, 214, 255)
-        elif self.underMouse():
-            border = QColor(118, 138, 226, 255)
-
-        painter.setPen(QPen(border, 3.2))
+            # Checked: BLUE background with white checkmark
+            fill = QColor(79, 140, 255, 255)      # Bright blue
+            border = QColor(60, 120, 255, 255)    # Darker blue border
+        else:
+            # Unchecked: WHITE/light background
+            fill = QColor(255, 255, 255, 200)     # Semi-transparent white
+            border = QColor(138, 154, 255, 180)   # Light purple border
+        
+        # Hover effect for unchecked boxes
+        if self.underMouse() and not self.isChecked():
+            fill = QColor(220, 230, 255, 220)     # Light blue tint
+            border = QColor(100, 140, 255, 200)
+        
+        painter.setPen(QPen(border, 2.5))
         painter.setBrush(fill)
-        painter.drawRoundedRect(r, 8, 8)
-
+        painter.drawRoundedRect(r, 7, 7)
+        
+        # Draw CHECKMARK (✓) when checked
         if self.isChecked():
-            painter.setPen(QPen(QColor("#112a8f"), 5.8, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-            painter.drawLine(r.left() + 6, r.top() + 6, r.right() - 6, r.bottom() - 6)
-            painter.drawLine(r.right() - 6, r.top() + 6, r.left() + 6, r.bottom() - 6)
+            painter.setPen(QPen(QColor(255, 255, 255), 3.2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            # Draw a proper checkmark
+            painter.drawLine(r.left() + 6, r.center().y(), r.center().x() - 1, r.bottom() - 6)
+            painter.drawLine(r.center().x() - 1, r.bottom() - 6, r.right() - 5, r.top() + 5)
 
 
 class StudentCard(QFrame):
