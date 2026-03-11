@@ -362,44 +362,45 @@ class XCheckBox(QCheckBox):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setCursor(Qt.PointingHandCursor)
-        self.setFixedSize(28, 28)
+        self.setFixedSize(32, 32)
         self.setStyleSheet("QCheckBox { spacing: 0; background: transparent; } QCheckBox::indicator { width: 0px; height: 0px; }")
 
     def sizeHint(self):
-        return QSize(28, 28)
+        return QSize(32, 32)
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        r = self.rect().adjusted(2, 2, -2, -2)
+        r = self.rect().adjusted(3, 3, -3, -3)
         
-        # FIXED: Clear visual difference between checked and unchecked
+        # ULTRA VISIBLE: Completely different appearance
         if self.isChecked():
-            # Checked: BLUE background with white checkmark
-            fill = QColor(79, 140, 255, 255)      # Bright blue
-            border = QColor(60, 120, 255, 255)    # Darker blue border
+            # CHECKED: Solid bright purple with large white checkmark
+            fill = QColor(100, 80, 255, 255)     # Bright purple - SOLID FILL
+            border = QColor(120, 100, 255, 255)  # Lighter purple border
+            
+            painter.setPen(QPen(border, 3))
+            painter.setBrush(fill)
+            painter.drawRoundedRect(r, 6, 6)
+            
+            # Draw LARGE white checkmark
+            painter.setPen(QPen(QColor(255, 255, 255), 4.5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            # Checkmark path
+            painter.drawLine(r.left() + 7, r.center().y() + 1, r.center().x() - 1, r.bottom() - 7)
+            painter.drawLine(r.center().x() - 1, r.bottom() - 7, r.right() - 6, r.top() + 6)
         else:
-            # Unchecked: WHITE/light background
-            fill = QColor(255, 255, 255, 200)     # Semi-transparent white
-            border = QColor(138, 154, 255, 180)   # Light purple border
-        
-        # Hover effect for unchecked boxes
-        if self.underMouse() and not self.isChecked():
-            fill = QColor(220, 230, 255, 220)     # Light blue tint
-            border = QColor(100, 140, 255, 200)
-        
-        painter.setPen(QPen(border, 2.5))
-        painter.setBrush(fill)
-        painter.drawRoundedRect(r, 7, 7)
-        
-        # Draw CHECKMARK (✓) when checked
-        if self.isChecked():
-            painter.setPen(QPen(QColor(255, 255, 255), 3.2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-            # Draw a proper checkmark
-            painter.drawLine(r.left() + 6, r.center().y(), r.center().x() - 1, r.bottom() - 6)
-            painter.drawLine(r.center().x() - 1, r.bottom() - 6, r.right() - 5, r.top() + 5)
-
-
+            # UNCHECKED: Empty outline - NO FILL (hollow square)
+            border = QColor(180, 190, 220, 200)  # Light border
+            
+            painter.setPen(QPen(border, 2.5))
+            painter.setBrush(Qt.NoBrush)  # NO FILL - just outline
+            painter.drawRoundedRect(r, 6, 6)
+            
+            # Hover effect
+            if self.underMouse():
+                hover_border = QColor(140, 160, 255, 255)
+                painter.setPen(QPen(hover_border, 3))
+                painter.drawRoundedRect(r, 6, 6)
 class StudentCard(QFrame):
     openRequested = Signal(object)
 
@@ -637,36 +638,36 @@ class BloomBackground(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        r = self.rect()
-
-        base = QLinearGradient(0, 0, 0, r.height())
-        base.setColorAt(0.0, QColor(COLORS["bg_gradient_1"]))
-        base.setColorAt(0.35, QColor(COLORS["bg_gradient_2"]))
-        base.setColorAt(0.7, QColor(COLORS["bg_gradient_3"]))
-        base.setColorAt(1.0, QColor(COLORS["bg_gradient_4"]))
-        painter.fillRect(r, base)
-
-        blooms = [
-            ((r.width() * 0.22, r.height() * 0.12), r.width() * 0.24, QColor(79, 140, 255, 26)),
-            ((r.width() * 0.78, r.height() * 0.18), r.width() * 0.20, QColor(139, 92, 246, 24)),
-            ((r.width() * 0.20, r.height() * 0.64), r.width() * 0.16, QColor(79, 140, 255, 28)),
-            ((r.width() * 0.82, r.height() * 0.68), r.width() * 0.15, QColor(139, 92, 246, 28)),
-            ((r.width() * 0.52, r.height() * 0.90), r.width() * 0.24, QColor(100, 120, 255, 20)),
-        ]
-        painter.setPen(Qt.NoPen)
-        for (cx, cy), radius, color in blooms:
-            grad = QRadialGradient(cx, cy, radius)
-            grad.setColorAt(0.0, color)
-            grad.setColorAt(0.45, QColor(color.red(), color.green(), color.blue(), max(10, color.alpha() // 2)))
-            grad.setColorAt(1.0, QColor(color.red(), color.green(), color.blue(), 0))
-            painter.setBrush(QBrush(grad))
-            painter.drawEllipse(QRectF(cx - radius, cy - radius, radius * 2, radius * 2))
-
-        painter.setBrush(Qt.NoBrush)
-        painter.setPen(QPen(QColor(255, 255, 255, 16), 2))
-        painter.drawRoundedRect(QRectF(24, 24, r.width() - 48, r.height() - 48), 30, 30)
-
-
+        r = self.rect().adjusted(3, 3, -3, -3)
+        
+        # ULTRA VISIBLE: Completely different appearance
+        if self.isChecked():
+            # CHECKED: Solid bright purple with large white checkmark
+            fill = QColor(100, 80, 255, 255)     # Bright purple - SOLID FILL
+            border = QColor(120, 100, 255, 255)  # Lighter purple border
+            
+            painter.setPen(QPen(border, 3))
+            painter.setBrush(fill)
+            painter.drawRoundedRect(r, 6, 6)
+            
+            # Draw LARGE white checkmark
+            painter.setPen(QPen(QColor(255, 255, 255), 4.5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            # Checkmark path
+            painter.drawLine(r.left() + 7, r.center().y() + 1, r.center().x() - 1, r.bottom() - 7)
+            painter.drawLine(r.center().x() - 1, r.bottom() - 7, r.right() - 6, r.top() + 6)
+        else:
+            # UNCHECKED: Empty outline - NO FILL (hollow square)
+            border = QColor(180, 190, 220, 200)  # Light border
+            
+            painter.setPen(QPen(border, 2.5))
+            painter.setBrush(Qt.NoBrush)  # NO FILL - just outline
+            painter.drawRoundedRect(r, 6, 6)
+            
+            # Hover effect
+            if self.underMouse():
+                hover_border = QColor(140, 160, 255, 255)
+                painter.setPen(QPen(hover_border, 3))
+                painter.drawRoundedRect(r, 6, 6)
 class AdvisingDashboard(QMainWindow):
     def __init__(self):
         super().__init__()
