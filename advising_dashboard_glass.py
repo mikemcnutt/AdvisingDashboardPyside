@@ -373,22 +373,22 @@ class XCheckBox(QCheckBox):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         r = self.rect().adjusted(1, 1, -1, -1)
-        fill = QColor(255, 255, 255, 28)
-        border = QColor(255, 255, 255, 102)
+        fill = QColor(255, 255, 255, 22)
+        border = QColor(232, 238, 255, 128)
         if self.isChecked():
-            fill = QColor(102, 123, 255, 180)
-            border = QColor(210, 220, 255, 220)
+            fill = QColor(96, 118, 255, 245)
+            border = QColor(248, 250, 255, 255)
         elif self.underMouse():
-            border = QColor(210, 220, 255, 160)
+            border = QColor(232, 238, 255, 190)
 
-        painter.setPen(QPen(border, 2))
+        painter.setPen(QPen(border, 2.2))
         painter.setBrush(fill)
         painter.drawRoundedRect(r, 7, 7)
 
         if self.isChecked():
-            painter.setPen(QPen(QColor("#ffffff"), 2.4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-            painter.setFont(QFont("Segoe UI", 11, QFont.Bold))
-            painter.drawText(r, Qt.AlignCenter, "×")
+            painter.setPen(QPen(QColor("#ffffff"), 3.6, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            painter.drawLine(r.left() + 5, r.top() + 5, r.right() - 5, r.bottom() - 5)
+            painter.drawLine(r.right() - 5, r.top() + 5, r.left() + 5, r.bottom() - 5)
 
 
 class StudentCard(QFrame):
@@ -401,7 +401,7 @@ class StudentCard(QFrame):
         self.show_email_btn = show_email_btn
         self.checkbox = None
 
-        self.setStyleSheet(f"""
+        self.default_style = f"""
             QFrame {{
                 background-color: rgba(10, 13, 31, 0.72);
                 border: 1px solid rgba(138, 154, 255, 0.32);
@@ -412,14 +412,27 @@ class StudentCard(QFrame):
                 background-color: rgba(20, 24, 58, 0.84);
                 border: 1px solid rgba(138, 170, 255, 0.75);
             }}
-        """)
+        """
+        self.selected_style = f"""
+            QFrame {{
+                background-color: rgba(36, 42, 108, 0.88);
+                border: 2px solid rgba(188, 205, 255, 0.96);
+                border-radius: 18px;
+                padding: 11px;
+            }}
+            QFrame:hover {{
+                background-color: rgba(46, 54, 128, 0.94);
+                border: 2px solid rgba(214, 226, 255, 1.0);
+            }}
+        """
+        self.setStyleSheet(self.default_style)
         self.setMinimumHeight(110)
 
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(18)
-        shadow.setColor(QColor(0, 0, 0, 70))
-        shadow.setOffset(0, 3)
-        self.setGraphicsEffect(shadow)
+        self.shadow = QGraphicsDropShadowEffect()
+        self.shadow.setBlurRadius(18)
+        self.shadow.setColor(QColor(0, 0, 0, 70))
+        self.shadow.setOffset(0, 3)
+        self.setGraphicsEffect(self.shadow)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -432,6 +445,7 @@ class StudentCard(QFrame):
 
         if self.show_checkbox:
             self.checkbox = XCheckBox()
+            self.checkbox.toggled.connect(self._on_checked_changed)
             top_row.addWidget(self.checkbox)
 
         name_label = ClickableLabel(self.student.student_name)
@@ -530,6 +544,18 @@ class StudentCard(QFrame):
         badges_label.setGraphicsEffect(badges_shadow)
         layout.addWidget(badges_label)
 
+
+    def _on_checked_changed(self, checked):
+        if checked:
+            self.setStyleSheet(self.selected_style)
+            self.shadow.setBlurRadius(28)
+            self.shadow.setColor(QColor(92, 108, 255, 165))
+            self.shadow.setOffset(0, 0)
+        else:
+            self.setStyleSheet(self.default_style)
+            self.shadow.setBlurRadius(18)
+            self.shadow.setColor(QColor(0, 0, 0, 70))
+            self.shadow.setOffset(0, 3)
 
 class ColumnCard(QFrame):
     def __init__(self, title, glow_color, parent=None):
