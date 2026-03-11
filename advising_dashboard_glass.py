@@ -367,6 +367,13 @@ class XCheckBox(QCheckBox):
 
     def sizeHint(self):
         return QSize(28, 28)
+    
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.toggle()
+            event.accept()
+        else:
+            super().mousePressEvent(event)
 
     def paintEvent(self, event):
         painter = QPainter(self)
