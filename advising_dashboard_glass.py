@@ -314,9 +314,9 @@ class GlassButton(QPushButton):
     def __init__(self, text, glow_color=None, parent=None):
         super().__init__(text, parent)
         self.setMinimumHeight(44)
-        self.setMinimumWidth(130)
+        self.setMinimumWidth(148)
         self.setCursor(Qt.PointingHandCursor)
-        self.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        self.setFont(QFont("Segoe UI", 10, QFont.Bold))
         self.shadow = QGraphicsDropShadowEffect(self)
         self.shadow.setOffset(0, 0)
         self.setGraphicsEffect(self.shadow)
@@ -374,18 +374,18 @@ class XCheckBox(QCheckBox):
         painter.setRenderHint(QPainter.Antialiasing)
         r = self.rect().adjusted(1, 1, -1, -1)
         fill = QColor(255, 255, 255, 255)
-        border = QColor(79, 92, 168, 215)
+        border = QColor(96, 110, 190, 235)
         if self.isChecked():
-            border = QColor(53, 92, 255, 255)
+            border = QColor(25, 63, 214, 255)
         elif self.underMouse():
-            border = QColor(98, 120, 210, 245)
+            border = QColor(118, 138, 226, 255)
 
-        painter.setPen(QPen(border, 2.8))
+        painter.setPen(QPen(border, 3.2))
         painter.setBrush(fill)
         painter.drawRoundedRect(r, 8, 8)
 
         if self.isChecked():
-            painter.setPen(QPen(QColor("#2c46c7"), 4.8, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            painter.setPen(QPen(QColor("#112a8f"), 5.8, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
             painter.drawLine(r.left() + 6, r.top() + 6, r.right() - 6, r.bottom() - 6)
             painter.drawLine(r.right() - 6, r.top() + 6, r.left() + 6, r.bottom() - 6)
 
@@ -414,14 +414,14 @@ class StudentCard(QFrame):
         """
         self.selected_style = f"""
             QFrame {{
-                background-color: rgba(58, 72, 178, 0.98);
-                border: 3px solid rgba(255, 255, 255, 1.0);
+                background-color: rgba(94, 118, 255, 0.24);
+                border: 3px solid rgba(208, 220, 255, 1.0);
                 border-radius: 18px;
                 padding: 10px;
             }}
             QFrame:hover {{
-                background-color: rgba(68, 84, 198, 1.0);
-                border: 3px solid rgba(255, 255, 255, 1.0);
+                background-color: rgba(108, 132, 255, 0.28);
+                border: 3px solid rgba(230, 238, 255, 1.0);
             }}
         """
         self.setStyleSheet(self.default_style)
@@ -547,8 +547,8 @@ class StudentCard(QFrame):
     def _on_checked_changed(self, checked):
         if checked:
             self.setStyleSheet(self.selected_style)
-            self.shadow.setBlurRadius(36)
-            self.shadow.setColor(QColor(114, 140, 255, 245))
+            self.shadow.setBlurRadius(42)
+            self.shadow.setColor(QColor(132, 156, 255, 255))
             self.shadow.setOffset(0, 0)
         else:
             self.setStyleSheet(self.default_style)
@@ -971,23 +971,23 @@ class AdvisingDashboard(QMainWindow):
         controls.setSpacing(10)
         select_all_btn = GlassButton("Select All")
         select_all_btn.clicked.connect(self._select_all_needs)
-        select_all_btn.setMaximumWidth(112)
+        select_all_btn.setMaximumWidth(148)
         controls.addWidget(select_all_btn)
 
         select_none_btn = GlassButton("Select None")
         select_none_btn.clicked.connect(self._select_none_needs)
-        select_none_btn.setMaximumWidth(118)
+        select_none_btn.setMaximumWidth(148)
         controls.addWidget(select_none_btn)
         controls.addStretch()
 
         draft_btn = GlassButton("Create Draft")
         draft_btn.clicked.connect(lambda: self._email_selected_needs(True))
-        draft_btn.setMaximumWidth(130)
+        draft_btn.setMaximumWidth(148)
         controls.addWidget(draft_btn)
 
         send_btn = GlassButton("Send Email", glow_color=COLORS['status_needed'])
         send_btn.clicked.connect(lambda: self._email_selected_needs(False))
-        send_btn.setMaximumWidth(130)
+        send_btn.setMaximumWidth(148)
         controls.addWidget(send_btn)
         self.needs_column.content_layout.addLayout(controls)
 
