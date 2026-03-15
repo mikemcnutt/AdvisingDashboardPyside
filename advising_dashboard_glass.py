@@ -1,10 +1,16 @@
+
 """
 Advising Dashboard - Dark Purple/Blue Glassmorphism Theme
 Beautiful frosted glass UI with glowing purple effects
 Version: 2.2 - fixed duplicate scan on Windows, name-only open, slimmer column headers
 """
 
+# Suppress Qt/Chromium harmless error messages on Linux
+import os
+os.environ['QT_LOGGING_RULES'] = '*.debug=false;qt.qpa.*=false'
+
 import json
+import platform
 import sys
 import html
 import re
@@ -21,7 +27,7 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QLineEdit, QComboBox, QCheckBox, QScrollArea,
     QFrame, QSizePolicy, QMessageBox, QFileDialog, QGridLayout, QGraphicsDropShadowEffect,
-    QTextEdit
+    QTextEdit, QDialog, QDialogButtonBox
 )
 from PySide6.QtCore import Qt, Signal, QSize, QRectF, QByteArray
 from PySide6.QtGui import (
@@ -34,6 +40,17 @@ try:
 except Exception:
     win32com = None
 
+
+
+# Platform-specific scaling for Linux 4K displays
+def get_scale():
+    return 1.3 if platform.system() == "Linux" else 1.0
+
+def scale_size(base_size):
+    return int(base_size * get_scale())
+
+def scale_font(base_size):
+    return int(base_size * get_scale())
 
 APP_TITLE = "Advising Dashboard"
 
@@ -70,17 +87,32 @@ TRACK_LABELS = {
     "PR": "Programming",
 }
 
-INPUT_WIDGET_STYLE = """
-    background-color: #ffffff;
-    color: #355cff;
-    border: 1px solid rgba(138, 154, 255, 0.55);
-    border-radius: 16px;
-    padding: 12px 14px;
-    selection-background-color: rgba(79, 140, 255, 0.22);
-    selection-color: #17306b;
-    font-size: 14px;
-    font-weight: 600;
-"""
+def get_input_style():
+    if platform.system() == "Linux":
+        return """
+            background-color: #ffffff;
+            color: #355cff;
+            border: 1px solid rgba(138, 154, 255, 0.55);
+            border-radius: 16px;
+            padding: 8px 12px;
+            selection-background-color: rgba(79, 140, 255, 0.22);
+            selection-color: #17306b;
+            font-size: 16px;
+            font-weight: 600;
+        """
+    return """
+        background-color: #ffffff;
+        color: #355cff;
+        border: 1px solid rgba(138, 154, 255, 0.55);
+        border-radius: 16px;
+        padding: 12px 14px;
+        selection-background-color: rgba(79, 140, 255, 0.22);
+        selection-color: #17306b;
+        font-size: 14px;
+        font-weight: 600;
+    """
+
+INPUT_WIDGET_STYLE = get_input_style()
 
 
 def app_base_dir() -> Path:
@@ -258,10 +290,24 @@ def build_email_subject(template: str, term_label: str) -> str:
 
 
 def send_outlook_emails(messages: List[Tuple[str, str, str]], draft: bool = False):
-    if win32com is None:
-        QMessageBox.critical(None, "Error", "Outlook automation not available (win32com not installed)")
+    """Send emails - Outlook desktop on Windows, Outlook web on Linux"""
+    if platform.system() == "Linux":
+        import urllib.parse
+        try:
+            for addr, subject, body_text in messages:
+                to_param = urllib.parse.quote(addr, safe='@')
+                subject_param = urllib.parse.quote(subject, safe='').replace('+', '%20')
+                body_param = urllib.parse.quote(body_text, safe='').replace('+', '%20')
+                outlook_url = f"https://outlook.office.com/mail/deeplink/compose?to={to_param}&subject={subject_param}&body={body_param}"
+                webbrowser.open(outlook_url)
+            QMessageBox.information(None, "Email", f"Opened {len(messages)} compose windows in Outlook web app.")
+        except Exception as e:
+            QMessageBox.critical(None, "Email Error", f"Could not open Outlook:\n{e}")
         return
-
+    
+    if win32com is None:
+        QMessageBox.critical(None, "Error", "Outlook not available")
+        return
     try:
         outlook = win32com.client.Dispatch("Outlook.Application")
         for addr, subject, body_text in messages:
@@ -298,7 +344,7 @@ class GlassCard(QFrame):
         self.setStyleSheet(f"""
             QFrame {{
                 background-color: rgba(8, 11, 28, 0.52);
-                border: {border_width}px solid rgba(133, 150, 255, 0.34);
+                border: 1px solid rgba(133, 150, 255, 0.18);
                 border-radius: 28px;
             }}
         """)
@@ -312,10 +358,10 @@ class GlassCard(QFrame):
 class GlassButton(QPushButton):
     def __init__(self, text, glow_color=None, parent=None):
         super().__init__(text, parent)
-        self.setMinimumHeight(44)
-        self.setMinimumWidth(148)
+        self.setFixedHeight(scale_size(32))
+        self.setMinimumWidth(scale_size(88))
         self.setCursor(Qt.PointingHandCursor)
-        self.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        self.setFont(QFont("Segoe UI", scale_font(13), QFont.Bold))
         self.shadow = QGraphicsDropShadowEffect(self)
         self.shadow.setOffset(0, 0)
         self.setGraphicsEffect(self.shadow)
@@ -328,8 +374,8 @@ class GlassButton(QPushButton):
                     background-color: {COLORS['button_hover']};
                     color: {COLORS['text_primary']};
                     border: 2px solid {COLORS['accent_purple']};
-                    border-radius: 22px;
-                    padding: 10px 28px;
+                    border-radius: 16px;
+                    padding: 2px 10px;
                     font-weight: bold;
                 }}
             """)
@@ -341,8 +387,8 @@ class GlassButton(QPushButton):
                     background-color: {COLORS['button_bg']};
                     color: {COLORS['text_primary']};
                     border: 2px solid {COLORS['button_border']};
-                    border-radius: 22px;
-                    padding: 10px 28px;
+                    border-radius: 16px;
+                    padding: 2px 10px;
                     font-weight: bold;
                 }}
             """)
@@ -367,39 +413,34 @@ class XCheckBox(QCheckBox):
 
     def sizeHint(self):
         return QSize(28, 28)
-    
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.toggle()
+            self.setChecked(not self.isChecked())
             event.accept()
-        else:
-            super().mousePressEvent(event)
+            self.update()
+            return
+        super().mousePressEvent(event)
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        r = self.rect().adjusted(3, 3, -3, -3)
-        
+        r = self.rect().adjusted(1, 1, -1, -1)
+        fill = QColor(255, 255, 255, 255)
+        border = QColor(96, 110, 190, 235)
         if self.isChecked():
-            # CHECKED: Solid bright purple with white checkmark
-            fill = QColor(100, 80, 255, 255)
-            border = QColor(120, 100, 255, 255)
-            painter.setPen(QPen(border, 3))
-            painter.setBrush(fill)
-            painter.drawRoundedRect(r, 6, 6)
-            # Large white checkmark
-            painter.setPen(QPen(QColor(255, 255, 255), 4.5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-            painter.drawLine(r.left() + 7, r.center().y() + 1, r.center().x() - 1, r.bottom() - 7)
-            painter.drawLine(r.center().x() - 1, r.bottom() - 7, r.right() - 6, r.top() + 6)
-        else:
-            # UNCHECKED: Hollow outline only
-            border = QColor(180, 190, 220, 200)
-            painter.setPen(QPen(border, 2.5))
-            painter.setBrush(Qt.NoBrush)
-            painter.drawRoundedRect(r, 6, 6)
-            if self.underMouse():
-                painter.setPen(QPen(QColor(140, 160, 255, 255), 3))
-                painter.drawRoundedRect(r, 6, 6)
+            border = QColor(25, 63, 214, 255)
+        elif self.underMouse():
+            border = QColor(118, 138, 226, 255)
+
+        painter.setPen(QPen(border, 3.2))
+        painter.setBrush(fill)
+        painter.drawRoundedRect(r, 8, 8)
+
+        if self.isChecked():
+            painter.setPen(QPen(QColor("#112a8f"), 5.8, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            painter.drawLine(r.left() + 6, r.top() + 6, r.right() - 6, r.bottom() - 6)
+            painter.drawLine(r.right() - 6, r.top() + 6, r.left() + 6, r.bottom() - 6)
 
 
 class StudentCard(QFrame):
@@ -460,7 +501,7 @@ class StudentCard(QFrame):
             top_row.addWidget(self.checkbox)
 
         name_label = ClickableLabel(self.student.student_name)
-        name_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        name_label.setFont(QFont("Segoe UI", scale_font(13), QFont.Bold))
         name_label.setWordWrap(False)
         name_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         name_label.setMinimumWidth(150)
@@ -538,7 +579,7 @@ class StudentCard(QFrame):
         layout.addLayout(top_row)
 
         badges_label = QLabel("  ".join(self.student.badges))
-        badges_label.setFont(QFont("Segoe UI", 10, QFont.DemiBold))
+        badges_label.setFont(QFont("Segoe UI", scale_font(12), QFont.DemiBold))  # Larger status badges
         badges_label.setStyleSheet("""
             QLabel {
                 color: #ffffff;
@@ -575,7 +616,7 @@ class ColumnCard(QFrame):
         self.setStyleSheet(f"""
             QFrame {{
                 background-color: {COLORS['card_bg']};
-                border: 2px solid {COLORS['glass_border']};
+                border: 1px solid rgba(133, 150, 255, 0.18);
                 border-radius: 28px;
             }}
         """)
@@ -590,8 +631,8 @@ class ColumnCard(QFrame):
         layout.setSpacing(0)
 
         header = QFrame()
-        header.setMinimumHeight(46)
-        header.setMaximumHeight(46)
+        header.setMinimumHeight(24)
+        header.setMaximumHeight(24)
         header.setStyleSheet("""
             QFrame {
                 background: rgba(255, 255, 255, 0.08);
@@ -600,14 +641,14 @@ class ColumnCard(QFrame):
                 border-bottom-left-radius: 0px;
                 border-bottom-right-radius: 0px;
                 border: none;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+                border-bottom: none;
             }
         """)
         header_layout = QVBoxLayout(header)
         header_layout.setContentsMargins(18, 0, 18, 0)
 
         self.title_label = QLabel(title)
-        self.title_label.setFont(QFont("Segoe UI", 13, QFont.Bold))
+        self.title_label.setFont(QFont("Segoe UI", scale_font(18), QFont.Bold))  # Larger headers
         self.title_label.setStyleSheet(f"""
             QLabel {{
                 color: {COLORS['text_primary']};
@@ -626,8 +667,8 @@ class ColumnCard(QFrame):
         self.content = QWidget()
         self.content.setStyleSheet("background: transparent;")
         self.content_layout = QVBoxLayout(self.content)
-        self.content_layout.setContentsMargins(16, 16, 16, 16)
-        self.content_layout.setSpacing(12)
+        self.content_layout.setContentsMargins(0, 0, 0, 16)  # Remove top/left/right margins for flush headers
+        self.content_layout.setSpacing(0)  # Remove spacing to eliminate gap between header and cards
         layout.addWidget(self.content)
 
     def set_title(self, title):
@@ -664,9 +705,6 @@ class BloomBackground(QWidget):
             painter.setBrush(QBrush(grad))
             painter.drawEllipse(QRectF(cx - radius, cy - radius, radius * 2, radius * 2))
 
-        painter.setBrush(Qt.NoBrush)
-        painter.setPen(QPen(QColor(255, 255, 255, 16), 2))
-        painter.drawRoundedRect(QRectF(24, 24, r.width() - 48, r.height() - 48), 30, 30)
 
 
 class AdvisingDashboard(QMainWindow):
@@ -736,21 +774,21 @@ class AdvisingDashboard(QMainWindow):
 
     def _build_header(self, parent_layout):
         header_card = GlassCard(glow_color=COLORS['glass_glow'])
-        header_card.setMinimumHeight(88)
-        header_card.setMaximumHeight(96)
+        header_card.setMinimumHeight(34)
+        header_card.setMaximumHeight(40)
         header_card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         layout = QVBoxLayout(header_card)
-        layout.setContentsMargins(34, 10, 34, 10)
+        layout.setContentsMargins(24, 2, 24, 2)
         layout.setSpacing(0)
 
         title_row = QHBoxLayout()
         title_row.addStretch(1)
 
-        title = QLabel("One Dashboard to Rule Them All")
+        title = QLabel("One Dashboard To Rule Them All")
         title.setAlignment(Qt.AlignCenter)
         title.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
-        title.setFont(QFont("Segoe UI", 24, QFont.Bold))
+        title.setFont(QFont("Segoe UI", scale_font(28), QFont.Bold))
         title.setStyleSheet(f"""
             color: {COLORS['text_primary']};
             background: transparent;
@@ -766,23 +804,21 @@ class AdvisingDashboard(QMainWindow):
         title_row.addWidget(title, 0, Qt.AlignCenter)
         title_row.addStretch(1)
 
-        layout.addStretch(1)
         layout.addLayout(title_row)
-        layout.addStretch(1)
 
         parent_layout.addWidget(header_card)
 
     def _build_control_panel(self, parent_layout):
         panel = GlassCard(glow_color=COLORS['glass_glow'])
-        panel.setMaximumHeight(360)
+        panel.setMaximumHeight(scale_size(400))  # Increased by 20px to show email body corners
         panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         layout = QVBoxLayout(panel)
-        layout.setContentsMargins(24, 22, 24, 22)
-        layout.setSpacing(16)
+        layout.setContentsMargins(18, 4, 18, 8)
+        layout.setSpacing(6)
 
         top_row = QHBoxLayout()
-        top_row.setSpacing(16)
+        top_row.setSpacing(12)
 
         year_widget = self._create_control_group("Academic Year")
         self.year_combo = QComboBox()
@@ -819,14 +855,17 @@ class AdvisingDashboard(QMainWindow):
         self.fall_check = QCheckBox("Fall")
         self.fall_check.setChecked(self.fall_enabled)
         sem_checks.addWidget(self.fall_check)
+        
+        # Add Quick button right after Fall checkbox
+        quick_btn = GlassButton("Quick: Summer + Fall")
+        quick_btn.clicked.connect(self._quick_pair)
+        quick_btn.setMaximumWidth(scale_size(190))
+        sem_checks.addWidget(quick_btn)
+        
         sem_checks.addStretch()
         sem_widget.layout().addLayout(sem_checks)
         top_row.addWidget(sem_widget, 1)
-
-        quick_btn = GlassButton("Quick: Summer + Fall")
-        quick_btn.clicked.connect(self._quick_pair)
-        quick_btn.setMaximumWidth(220)
-        top_row.addWidget(quick_btn, 0)
+        top_row.addStretch(1)
 
         search_widget = self._create_control_group("Search")
         self.search_entry = QLineEdit()
@@ -857,6 +896,10 @@ class AdvisingDashboard(QMainWindow):
         """)
         self.track_combo.setCurrentText(self.track_filter)
         self.track_combo.currentTextChanged.connect(self._on_filter_changed)
+        try:
+            self.track_combo.view().setFont(QFont("Segoe UI", scale_font(16)))
+        except Exception:
+            pass
         self.year_combo.currentTextChanged.connect(self._populate_lists)
         self.spring_check.toggled.connect(self._populate_lists)
         self.summer_check.toggled.connect(self._populate_lists)
@@ -867,7 +910,7 @@ class AdvisingDashboard(QMainWindow):
         layout.addLayout(top_row)
 
         middle_row = QHBoxLayout()
-        middle_row.setSpacing(12)
+        middle_row.setSpacing(10)
 
         folder_widget = self._create_control_group("Advising Folder")
         self.folder_entry = QLineEdit(self.folder_path)
@@ -877,18 +920,29 @@ class AdvisingDashboard(QMainWindow):
 
         browse_btn = GlassButton("Browse")
         browse_btn.clicked.connect(self._browse_folder)
-        browse_btn.setMaximumWidth(120)
-        middle_row.addWidget(browse_btn)
+        browse_btn.setMaximumWidth(112)
 
         scan_btn = GlassButton("Scan Folder", glow_color=COLORS['status_complete'])
         scan_btn.clicked.connect(self._scan_folder)
-        scan_btn.setMaximumWidth(150)
-        middle_row.addWidget(scan_btn)
+        scan_btn.setMaximumWidth(120)
+        
+        new_student_btn = GlassButton("New Student", glow_color=COLORS['accent_blue'])
+        new_student_btn.clicked.connect(self._create_new_student)
+        new_student_btn.setMaximumWidth(130)
+
+        folder_btns = QHBoxLayout()
+        folder_btns.setSpacing(12)
+        folder_btns.setContentsMargins(0, scale_size(28), 0, 0)
+        folder_btns.addWidget(browse_btn)
+        folder_btns.addWidget(scan_btn)
+        folder_btns.addWidget(new_student_btn)
+
+        middle_row.addLayout(folder_btns)
 
         layout.addLayout(middle_row)
 
         lower_row = QHBoxLayout()
-        lower_row.setSpacing(16)
+        lower_row.setSpacing(8)
 
         subj_widget = self._create_control_group("Email Subject")
         self.subject_entry = QLineEdit(self.email_subject)
@@ -902,8 +956,8 @@ class AdvisingDashboard(QMainWindow):
         link_widget.layout().addWidget(self.link_entry)
         lower_row.addWidget(link_widget, 1)
 
-        self.status_label = QLabel("Ready")
-        self.status_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        self.status_label = QLabel("")
+        self.status_label.setFont(QFont("Segoe UI", scale_font(10), QFont.Bold))
         self.status_label.setStyleSheet(f"color: {COLORS['text_secondary']}; background: transparent; border: none; padding: 0; margin: 0;")
         lower_row.addWidget(self.status_label, 0, Qt.AlignBottom)
 
@@ -915,8 +969,9 @@ class AdvisingDashboard(QMainWindow):
         self.email_body.setStyleSheet(f"QTextEdit {{{INPUT_WIDGET_STYLE}}}")
         self.email_body.setAcceptRichText(False)
         self.email_body.setLineWrapMode(QTextEdit.WidgetWidth)
-        self.email_body.setMinimumHeight(88)
-        self.email_body.setMaximumHeight(100)
+        self.email_body.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # Hidden but still scrollable
+        self.email_body.setMinimumHeight(scale_size(123))  # 160px on Linux (shows rounded corners)
+        self.email_body.setMaximumHeight(scale_size(123))
 
         default_body = (
             "Hello {first_name},\n\n"
@@ -943,10 +998,10 @@ class AdvisingDashboard(QMainWindow):
         widget.setStyleSheet("background: transparent;")
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setSpacing(2)
 
         label = QLabel(label_text)
-        label.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        label.setFont(QFont("Segoe UI", scale_font(12), QFont.Bold))
         label.setStyleSheet(f"""
             QLabel {{
                 color: {COLORS['text_primary']};
@@ -969,38 +1024,45 @@ class AdvisingDashboard(QMainWindow):
 
         self.needs_column = ColumnCard("Needs Advised (0)", COLORS['status_needed'])
         self.needs_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.needs_column.setMinimumWidth(400)
         self.needs_column.setMinimumHeight(520)
 
         self.partial_column = ColumnCard("Advised (Not Complete) (0)", COLORS['status_partial'])
         self.partial_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.partial_column.setMinimumWidth(400)
         self.partial_column.setMinimumHeight(520)
 
         self.done_column = ColumnCard("Advised (0)", COLORS['status_complete'])
         self.done_column.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.done_column.setMinimumWidth(400)
         self.done_column.setMinimumHeight(520)
 
         controls = QHBoxLayout()
-        controls.setSpacing(10)
+        controls.setSpacing(8)
+
         select_all_btn = GlassButton("Select All")
         select_all_btn.clicked.connect(self._select_all_needs)
-        select_all_btn.setMaximumWidth(148)
-        controls.addWidget(select_all_btn)
+        select_all_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        controls.addWidget(select_all_btn, 1)
 
         select_none_btn = GlassButton("Select None")
         select_none_btn.clicked.connect(self._select_none_needs)
-        select_none_btn.setMaximumWidth(148)
-        controls.addWidget(select_none_btn)
-        controls.addStretch()
+        select_none_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        controls.addWidget(select_none_btn, 1)
 
         draft_btn = GlassButton("Create Draft")
         draft_btn.clicked.connect(lambda: self._email_selected_needs(True))
-        draft_btn.setMaximumWidth(148)
-        controls.addWidget(draft_btn)
+        draft_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        controls.addWidget(draft_btn, 1)
 
         send_btn = GlassButton("Send Email", glow_color=COLORS['status_needed'])
         send_btn.clicked.connect(lambda: self._email_selected_needs(False))
-        send_btn.setMaximumWidth(148)
-        controls.addWidget(send_btn)
+        send_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        controls.addWidget(send_btn, 1)
+
+        # Add vertical spacing around the controls (reduced by 50%)
+        controls.setContentsMargins(8, 8, 8, 8)  # Reduced from 16px to 8px
+
         self.needs_column.content_layout.addLayout(controls)
 
         self.needs_scroll = self._create_scroll_area()
@@ -1008,6 +1070,7 @@ class AdvisingDashboard(QMainWindow):
         self.needs_list_layout = QVBoxLayout(self.needs_list)
         self.needs_list_layout.setAlignment(Qt.AlignTop)
         self.needs_list_layout.setSpacing(12)
+        self.needs_list_layout.setContentsMargins(0, 0, 0, 0)  # No padding - headers go edge-to-edge
         self.needs_scroll.setWidget(self.needs_list)
         self.needs_column.content_layout.addWidget(self.needs_scroll, 1)
 
@@ -1016,12 +1079,22 @@ class AdvisingDashboard(QMainWindow):
         self.partial_list_layout = QVBoxLayout(self.partial_list)
         self.partial_list_layout.setAlignment(Qt.AlignTop)
         self.partial_list_layout.setSpacing(12)
+        self.partial_list_layout.setContentsMargins(0, 0, 0, 0)  # No padding - headers go edge-to-edge
         self.partial_scroll.setWidget(self.partial_list)
+        # Add top spacing before scroll area to match button spacing
+        self.partial_column.content_layout.addSpacing(8)
         self.partial_column.content_layout.addWidget(self.partial_scroll, 1)
 
         self.done_scroll = self._create_scroll_area()
         self.done_list = QWidget()
         self.done_list_layout = QVBoxLayout(self.done_list)
+        self.done_list_layout.setAlignment(Qt.AlignTop)
+        self.done_list_layout.setSpacing(12)
+        self.done_list_layout.setContentsMargins(0, 0, 0, 0)  # No padding - headers go edge-to-edge
+        self.done_scroll.setWidget(self.done_list)
+        # Add top spacing before scroll area to match button spacing
+        self.done_column.content_layout.addSpacing(8)
+        self.done_column.content_layout.addWidget(self.done_scroll, 1)
         self.done_list_layout.setAlignment(Qt.AlignTop)
         self.done_list_layout.setSpacing(12)
         self.done_scroll.setWidget(self.done_list)
@@ -1119,21 +1192,20 @@ class AdvisingDashboard(QMainWindow):
             }}
 
             QScrollBar:vertical {{
-                background: rgba(0, 0, 0, 0.18);
-                width: 12px;
-                margin: 2px 0 2px 0;
-                border-radius: 6px;
+                background: transparent;
+                width: 0px;
+                margin: 0px;
             }}
 
             QScrollBar::handle:vertical {{
-                background: rgba(121, 139, 255, 0.55);
-                min-height: 28px;
-                border-radius: 6px;
+                background: transparent;
+                min-height: 0px;
+                border-radius: 0px;
             }}
 
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
             QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
-                background: none;
+                background: transparent;
                 border: none;
                 height: 0px;
             }}
@@ -1143,6 +1215,185 @@ class AdvisingDashboard(QMainWindow):
         folder = QFileDialog.getExistingDirectory(self, "Select Advising Folder")
         if folder:
             self.folder_entry.setText(folder)
+
+    def _create_new_student(self):
+        """Create a new student JSON file with name prompt"""
+        # Get the advising folder
+        folder_text = self.folder_entry.text().strip()
+        if not folder_text:
+            folder = QFileDialog.getExistingDirectory(self, "Select Folder for New Student")
+            if not folder:
+                return
+            self.folder_entry.setText(folder)
+            folder_text = folder
+        
+        folder_path = Path(folder_text)
+        if not folder_path.is_dir():
+            QMessageBox.critical(self, "Error", "Please select a valid advising folder first.")
+            return
+        
+        # Custom dialog to get student information
+        dialog = QDialog(self)
+        dialog.setWindowTitle("New Student")
+        dialog.setMinimumWidth(scale_size(400))
+        
+        layout = QVBoxLayout(dialog)
+        layout.setSpacing(scale_size(12))
+        layout.setContentsMargins(scale_size(20), scale_size(20), scale_size(20), scale_size(20))
+        
+        # Instructions
+        inst_label = QLabel("Enter student information:")
+        inst_label.setStyleSheet(f"color: {COLORS['text_primary']}; font-size: {scale_font(14)}px; font-weight: bold;")
+        layout.addWidget(inst_label)
+        
+        layout.addSpacing(scale_size(10))
+        
+        # First name
+        first_label = QLabel("First Name:")
+        first_label.setStyleSheet(f"color: {COLORS['text_secondary']}; font-size: {scale_font(13)}px;")
+        first_input = QLineEdit()
+        first_input.setStyleSheet(get_input_style())
+        first_input.setMinimumHeight(scale_size(36))
+        layout.addWidget(first_label)
+        layout.addWidget(first_input)
+        
+        layout.addSpacing(scale_size(8))
+        
+        # Last name
+        last_label = QLabel("Last Name:")
+        last_label.setStyleSheet(f"color: {COLORS['text_secondary']}; font-size: {scale_font(13)}px;")
+        last_input = QLineEdit()
+        last_input.setStyleSheet(get_input_style())
+        last_input.setMinimumHeight(scale_size(36))
+        layout.addWidget(last_label)
+        layout.addWidget(last_input)
+        
+        layout.addSpacing(scale_size(8))
+        
+        # Student ID (optional)
+        id_label = QLabel("Student ID (optional):")
+        id_label.setStyleSheet(f"color: {COLORS['text_secondary']}; font-size: {scale_font(13)}px;")
+        id_input = QLineEdit()
+        id_input.setStyleSheet(get_input_style())
+        id_input.setMinimumHeight(scale_size(36))
+        layout.addWidget(id_label)
+        layout.addWidget(id_input)
+        
+        layout.addSpacing(scale_size(16))
+        
+        # Buttons
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        button_box.setStyleSheet(f"""
+            QDialogButtonBox {{
+                background: transparent;
+            }}
+            QPushButton {{
+                background-color: {COLORS['button_bg']};
+                color: {COLORS['text_primary']};
+                border: 1px solid {COLORS['button_border']};
+                border-radius: {scale_size(8)}px;
+                padding: {scale_size(8)}px {scale_size(20)}px;
+                font-size: {scale_font(13)}px;
+                font-weight: bold;
+                min-width: {scale_size(80)}px;
+            }}
+            QPushButton:hover {{
+                background-color: {COLORS['button_hover']};
+            }}
+        """)
+        layout.addWidget(button_box)
+        
+        # Style the dialog
+        dialog.setStyleSheet(f"""
+            QDialog {{
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 {COLORS['bg_gradient_2']},
+                    stop:1 {COLORS['bg_gradient_3']});
+            }}
+        """)
+        
+        if dialog.exec() != QDialog.Accepted:
+            return  # User cancelled
+        
+        first_name = first_input.text().strip()
+        last_name = last_input.text().strip()
+        student_id = id_input.text().strip()
+        
+        if not first_name or not last_name:
+            QMessageBox.warning(self, "Missing Information", "Please enter both first and last name.")
+            return
+        
+        # Generate suggested filename
+        from datetime import datetime
+        if student_id:
+            suggested_name = f"{last_name.lower()}_{student_id}.json"
+        else:
+            suggested_name = f"{last_name.lower()}_{first_name.lower()}.json"
+        
+        # Let user confirm or modify filename
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save New Student File",
+            str(folder_path / suggested_name),
+            "JSON Files (*.json)"
+        )
+        
+        if not file_path:
+            return  # User cancelled save dialog
+        
+        file_path = Path(file_path)
+        
+        # Create student template with the entered information
+        year = self.year_combo.currentText()
+        template = {
+            "v": 1,
+            "meta": {"ts": int(datetime.now().timestamp() * 1000)},
+            "student": {
+                "firstName": first_name,
+                "lastName": last_name,
+                "studentId": student_id,
+                "kctcsEmail": "",
+                "personalEmail": "",
+                "phone": ""
+            },
+            "selection": {
+                "scenario": "",
+                "subplan": "MS",
+                "aa": False,
+                "semesterCount": "0"
+            },
+            "data": {
+                "courses": [],
+                "scores": [],
+                "manualCourses": [],
+                "manualScores": [],
+                "notes": "",
+                "overrides": {},
+                "semesterPlans": []
+            }
+        }
+        
+        # Write the template
+        try:
+            file_path.write_text(json.dumps(template, indent=2), encoding="utf-8")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Could not create file:\n{e}")
+            return
+        
+        # Open the file in the HTML editor
+        if not self.server.server:
+            self.server.start()
+        
+        if not self.server.server:
+            QMessageBox.critical(self, "Error", "Could not start local server")
+            return
+        
+        url = self.server.get_url(file_path)
+        webbrowser.open(url)
+        
+        QMessageBox.information(self, "Success", f"Created new student file for {first_name} {last_name}:\n{file_path.name}\n\nOpened in browser for editing.")
 
     def _scan_folder(self):
         folder_text = self.folder_entry.text().strip()
@@ -1259,7 +1510,7 @@ class AdvisingDashboard(QMainWindow):
                 not_complete = bool(term_data.get("notComplete", False))
 
                 if declined:
-                    badge = "[Not Started]"
+                    badge = "[Student Declined]"
                 elif not_complete:
                     badge = "[In Progress]"
                 elif courses:
@@ -1270,13 +1521,13 @@ class AdvisingDashboard(QMainWindow):
                 badges.append(f"{term_name}: {badge}")
 
                 if term_name == "Spring":
-                    spring_done = badge == "[Complete]"
+                    spring_done = badge in ["[Complete]", "[Student Declined]"]  # Declined counts as done
                     spring_partial = badge == "[In Progress]"
                 elif term_name == "Summer":
-                    summer_done = badge == "[Complete]"
+                    summer_done = badge in ["[Complete]", "[Student Declined]"]  # Declined counts as done
                     summer_partial = badge == "[In Progress]"
                 elif term_name == "Fall":
-                    fall_done = badge == "[Complete]"
+                    fall_done = badge in ["[Complete]", "[Student Declined]"]  # Declined counts as done
                     fall_partial = badge == "[In Progress]"
 
             self.snapshots.append(
@@ -1300,6 +1551,28 @@ class AdvisingDashboard(QMainWindow):
                     notes=notes
                 )
             )
+
+        # Deduplicate by student ID - keep only the newest file for each student
+        if self.snapshots:
+            from collections import defaultdict
+            by_student_id = defaultdict(list)
+            
+            for snap in self.snapshots:
+                # Group by student ID (use name as fallback if no ID)
+                key = snap.student_id if snap.student_id else snap.student_name
+                by_student_id[key].append(snap)
+            
+            # Keep only the newest file for each student (by modification time)
+            deduplicated = []
+            for student_id, snaps in by_student_id.items():
+                if len(snaps) == 1:
+                    deduplicated.append(snaps[0])
+                else:
+                    # Sort by file modification time, newest first
+                    snaps_sorted = sorted(snaps, key=lambda s: s.file_path.stat().st_mtime, reverse=True)
+                    deduplicated.append(snaps_sorted[0])  # Keep newest
+            
+            self.snapshots = deduplicated
 
         self.status_label.setText(f"Scanned {len(self.snapshots)} student(s)")
         if self.search_entry.text().strip():
@@ -1423,33 +1696,76 @@ class AdvisingDashboard(QMainWindow):
 
     def _build_list(self, layout, students, accent_color, show_checkbox=False, show_email_btn=False):
         current_track = None
+        is_first_header = True  # Track if this is the first header in this column
 
         for s in students:
             if s.track_name != current_track:
                 current_track = s.track_name
                 count = sum(1 for x in students if x.track_name == current_track)
 
-                header = QLabel(f"  {current_track} ({count})")
-                header.setFont(QFont("Segoe UI", 12, QFont.Bold))
-                header.setStyleSheet(f"""
-                    QLabel {{
-                        color: {COLORS['text_primary']};
-                        padding: 10px 14px;
-                        border-radius: 14px;
-                        border: 1px solid rgba(148, 166, 255, 0.42);
-                        background: qlineargradient(
-                            x1:0, y1:0, x2:1, y2:0,
-                            stop:0 rgba(40, 62, 168, 0.92),
-                            stop:0.55 rgba(66, 58, 168, 0.92),
-                            stop:1 rgba(89, 50, 156, 0.92)
-                        );
-                    }}
-                """)
-                header_shadow = QGraphicsDropShadowEffect()
-                header_shadow.setBlurRadius(20)
-                header_shadow.setColor(QColor(35, 20, 100, 110))
-                header_shadow.setOffset(0, 1)
-                header.setGraphicsEffect(header_shadow)
+                header = QLabel(f"{current_track} ({count})")
+                header.setFont(QFont("Segoe UI", scale_font(16), QFont.Bold))
+                header.setAlignment(Qt.AlignCenter)
+                
+                # Different styling for first header vs subsequent headers
+                if is_first_header:
+                    # First header: rounded top corners ONLY, explicitly square bottom corners
+                    # AAA compliant gradient: darker colors for 8.5:1 contrast ratio
+                    header.setStyleSheet(f"""
+                        QLabel {{
+                            color: {COLORS['text_primary']};
+                            padding: 14px 0px;
+                            border-top-left-radius: 26px;
+                            border-top-right-radius: 26px;
+                            border-bottom-left-radius: 0px;
+                            border-bottom-right-radius: 0px;
+                            border: 1px solid rgba(148, 166, 255, 0.42);
+                            border-bottom: none;
+                            background: qlineargradient(
+                                x1:0, y1:0, x2:1, y2:0,
+                                stop:0 rgba(30, 47, 128, 0.95),
+                                stop:0.55 rgba(50, 44, 128, 0.95),
+                                stop:1 rgba(68, 38, 118, 0.95)
+                            );
+                        }}
+                    """)
+                    
+                    # Shadow only on top and sides, not bottom (to avoid rounded bottom appearance)
+                    header_shadow = QGraphicsDropShadowEffect()
+                    header_shadow.setBlurRadius(16)
+                    header_shadow.setColor(QColor(35, 20, 100, 90))
+                    header_shadow.setOffset(0, -2)  # Shadow upward for top emphasis
+                    header.setGraphicsEffect(header_shadow)
+                    
+                    is_first_header = False
+                else:
+                    # Subsequent headers: no rounded corners, full width
+                    # AAA compliant gradient
+                    header.setStyleSheet(f"""
+                        QLabel {{
+                            color: {COLORS['text_primary']};
+                            padding: 14px 0px;
+                            border-radius: 0px;
+                            border-left: 1px solid rgba(148, 166, 255, 0.42);
+                            border-right: 1px solid rgba(148, 166, 255, 0.42);
+                            border-top: 1px solid rgba(148, 166, 255, 0.42);
+                            border-bottom: none;
+                            background: qlineargradient(
+                                x1:0, y1:0, x2:1, y2:0,
+                                stop:0 rgba(30, 47, 128, 0.95),
+                                stop:0.55 rgba(50, 44, 128, 0.95),
+                                stop:1 rgba(68, 38, 118, 0.95)
+                            );
+                        }}
+                    """)
+                    
+                    # No shadow on subsequent headers for clean divider look
+                    # (or minimal shadow)
+                    header_shadow = QGraphicsDropShadowEffect()
+                    header_shadow.setBlurRadius(8)
+                    header_shadow.setColor(QColor(35, 20, 100, 60))
+                    header_shadow.setOffset(0, 0)
+                    header.setGraphicsEffect(header_shadow)
 
                 layout.addWidget(header)
 
@@ -1532,7 +1848,32 @@ class AdvisingDashboard(QMainWindow):
         return f"{term_text} {year}"
 
     def _build_email_body(self, student: Optional[SnapshotInfo] = None) -> str:
-        term = self._term_label()
+        # Build per-student term label based on what they actually need
+        if student is not None:
+            year = self.year_combo.currentText()
+            student_terms = []
+            
+            # Check which terms this specific student needs advising for
+            if self.spring_check.isChecked() and not student.spring_done and not student.spring_partial:
+                student_terms.append("Spring")
+            if self.summer_check.isChecked() and not student.summer_done and not student.summer_partial:
+                student_terms.append("Summer")
+            if self.fall_check.isChecked() and not student.fall_done and not student.fall_partial:
+                student_terms.append("Fall")
+            
+            # Build term string for this student
+            if not student_terms:
+                term = year  # Shouldn't happen, but fallback
+            elif len(student_terms) == 1:
+                term = f"{student_terms[0]} {year}"
+            elif len(student_terms) == 2:
+                term = f"{student_terms[0]} and {student_terms[1]} {year}"
+            else:
+                term = f"{', '.join(student_terms[:-1])}, and {student_terms[-1]} {year}"
+        else:
+            # Fallback to global term if no student provided
+            term = self._term_label()
+        
         body_template = html_to_plain_text(self.email_body.toPlainText()).strip()
         first_name = "Student"
         student_name = "Student"
@@ -1572,10 +1913,15 @@ class AdvisingDashboard(QMainWindow):
 
 
 def main():
-    QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+    import os
+    if platform.system() == "Linux":
+        os.environ['QT_AUTO_SCREEN_SCALE_FACTOR'] = '0'
+        os.environ['QT_SCALE_FACTOR'] = '1'
+        os.environ['QT_ENABLE_HIGHDPI_SCALING'] = '0'
+    
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
-    app.setFont(QFont("Segoe UI", 10))
+    app.setFont(QFont("Segoe UI", scale_font(10)))
     window = AdvisingDashboard()
     window.show()
     sys.exit(app.exec())
