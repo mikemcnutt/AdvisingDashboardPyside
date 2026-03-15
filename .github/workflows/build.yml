@@ -3,16 +3,19 @@ name: Build Windows EXE
 on:
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-windows:
     runs-on: windows-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
@@ -25,11 +28,11 @@ jobs:
 
       - name: Build executable with PyInstaller
         run: |
-          pyinstaller --noconfirm --clean --windowed --name "AdvisingDashboard" advising_dashboard_glass.py
+          pyinstaller --name="AdvisingDashboard" --onefile --windowed --icon=NONE advising_dashboard_glass.py
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v6
+      - name: Upload executable as artifact
+        uses: actions/upload-artifact@v4
         with:
           name: advising-dashboard-windows
-          path: dist/AdvisingDashboard
+          path: dist/AdvisingDashboard.exe
           retention-days: 30
