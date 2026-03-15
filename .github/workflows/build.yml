@@ -1,32 +1,40 @@
-name: Build Windows EXE
-
-on:
-  workflow_dispatch:
+workflow_dispatch:  # Allows manual trigger
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
+build-windows:
+runs-on: windows-latest
 
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v4
+steps:
+- name: Checkout code
+uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+- name: Set up Python
+uses: actions/setup-python@v5
+with:
+python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install PySide6 PyInstaller pywin32
+- name: Install dependencies
+run: |
+       python -m pip install --upgrade pip
+       pip install PySide6
+       pip install pyinstaller
+       pip install pywin32
+   
+- name: Build executable with PyInstaller
+run: |
+        pyinstaller --name="AdvisingDashboard" --onefile --windowed --icon=NONE advising_dashboard_glass.py
+   
+- name: Upload executable as artifact
+uses: actions/upload-artifact@v4
+with:
+name: advising-dashboard-windows
+path: dist/AdvisingDashboard.exe
+retention-days: 30
 
-      - name: Build EXE
-        run: |
-          pyinstaller --noconfirm --clean --windowed --collect-all PySide6 --name AdvisingDashboard fred2_trackfilterfont_fixed.py
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: AdvisingDashboard-Windows
-          path: dist/AdvisingDashboard
+- name: Create Release (on tag push)
+if: startsWith(github.ref, 'refs/tags/')
+uses: softprops/action-gh-release@v1
+with:
+files: dist/AdvisingDashboard.exe
+env:
+GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
