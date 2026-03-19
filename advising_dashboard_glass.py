@@ -183,6 +183,7 @@ class SnapshotInfo:
     summer_partial: bool
     fall_partial: bool
     notes: str
+    last_emailed: str  # Date/time when student was last emailed
 
 
 class LocalEditorServer:
@@ -445,6 +446,7 @@ class XCheckBox(QCheckBox):
 
 class StudentCard(QFrame):
     openRequested = Signal(object)
+    emailRequested = Signal(object)  # New signal for individual email
 
     def __init__(self, student: SnapshotInfo, accent_color, parent=None, show_checkbox=False, show_email_btn=False):
         super().__init__(parent)
@@ -558,13 +560,14 @@ class StudentCard(QFrame):
                     border: 2px solid {COLORS['accent_blue']};
                 }}
             """)
+            email_btn.clicked.connect(lambda: self.emailRequested.emit(self.student))
             top_row.addWidget(email_btn)
 
         if self.student.student_id:
             id_label = QLabel(self.student.student_id)
-            id_label.setFont(QFont("Consolas", 10))
+            id_label.setFont(QFont("Consolas", scale_font(11)))  # Match other text sizes
             id_label.setAlignment(Qt.AlignCenter)
-            id_label.setFixedWidth(82)
+            id_label.setFixedWidth(scale_size(100))
             id_label.setStyleSheet("""
                 QLabel {
                     color: #f8fbff;
@@ -578,7 +581,12 @@ class StudentCard(QFrame):
 
         layout.addLayout(top_row)
 
-        badges_label = QLabel("  ".join(self.student.badges))
+        # Build badges text with semester status and last emailed
+        badges_text = "  ".join(self.student.badges)
+        if self.student.last_emailed:
+            badges_text += f"  •  Last Emailed: {self.student.last_emailed}"
+        
+        badges_label = QLabel(badges_text)
         badges_label.setFont(QFont("Segoe UI", scale_font(12), QFont.DemiBold))  # Larger status badges
         badges_label.setStyleSheet("""
             QLabel {
@@ -1431,6 +1439,9 @@ class AdvisingDashboard(QMainWindow):
         seen = set()
         json_files = []
         for p in list(folder.rglob("*.json")) + list(folder.rglob("*.JSON")):
+            # Skip the settings file
+            if p.name.lower() == "advising_dashboard_settings.json":
+                continue
             key = str(p.resolve()).lower()
             if key not in seen:
                 seen.add(key)
@@ -1475,6 +1486,12 @@ class AdvisingDashboard(QMainWindow):
             track = str(selection_block.get("scenario") or data.get("track") or "GT").strip() or "GT"
             notes = str(data_block.get("notes") or data.get("notes") or student_block.get("notes") or "").strip()
             track_name = TRACK_LABELS.get(track, track)
+            
+            # Get last emailed timestamp from meta
+            meta_block = data.get("meta", {})
+            if not isinstance(meta_block, dict):
+                meta_block = {}
+            last_emailed = str(meta_block.get("lastEmailed") or "").strip()
 
             semester_plans = data_block.get("semesterPlans")
             if isinstance(semester_plans, list):
@@ -1548,7 +1565,8 @@ class AdvisingDashboard(QMainWindow):
                     spring_partial=spring_partial,
                     summer_partial=summer_partial,
                     fall_partial=fall_partial,
-                    notes=notes
+                    notes=notes,
+                    last_emailed=last_emailed
                 )
             )
 
@@ -1771,6 +1789,7 @@ class AdvisingDashboard(QMainWindow):
 
             card = StudentCard(s, accent_color, show_checkbox=show_checkbox, show_email_btn=show_email_btn)
             card.openRequested.connect(self._open_student)
+            card.emailRequested.connect(self._email_individual_student)
 
             if show_checkbox and card.checkbox:
                 self.needs_checks[str(s.file_path)] = card.checkbox
@@ -1825,7 +1844,78 @@ class AdvisingDashboard(QMainWindow):
             return
 
         send_outlook_emails(messages, draft)
+        
+        # Update each student's JSON file with lastEmailed timestamp
+        if not draft:  # Only track actual sent emails, not drafts
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%m/%d/%Y %I:%M %p")
+            
+            for s in selected:
+                try:
+                    # Read the JSON file
+                    with open(s.file_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    
+                    # Ensure meta block exists
+                    if "meta" not in data or not isinstance(data["meta"], dict):
+                        data["meta"] = {}
+                    
+                    # Update lastEmailed timestamp
+                    data["meta"]["lastEmailed"] = timestamp
+                    
+                    # Write back to file
+                    with open(s.file_path, 'w', encoding='utf-8') as f:
+                        json.dump(data, f, indent=2)
+                        
+                except Exception as e:
+                    print(f"Could not update lastEmailed for {s.file_path}: {e}")
+        
         QMessageBox.information(self, "Done", f"{'Drafts created' if draft else 'Emails sent'} for {len(messages)} student(s).")
+
+    def _email_individual_student(self, student: SnapshotInfo):
+        """Email a single student (used for 'Advised Not Complete' students)"""
+        recipient = student.kctcs_email or student.personal_email
+        if not recipient:
+            QMessageBox.information(self, "No Email Address", f"No email address found for {student.student_name}.")
+            return
+        
+        term_label = self._term_label()
+        subject = build_email_subject(self.subject_entry.text(), term_label)
+        body = self._build_email_body(student)
+        
+        # Send email (not draft)
+        send_outlook_emails([(recipient, subject, body)], draft=False)
+        
+        # Update student's JSON file with lastEmailed timestamp
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%m/%d/%Y %I:%M %p")
+        
+        try:
+            # Read the JSON file
+            with open(student.file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            # Ensure meta block exists
+            if "meta" not in data or not isinstance(data["meta"], dict):
+                data["meta"] = {}
+            
+            # Update lastEmailed timestamp
+            data["meta"]["lastEmailed"] = timestamp
+            
+            # Write back to file
+            with open(student.file_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2)
+            
+            # Update the in-memory student object
+            student.last_emailed = timestamp
+            
+            # Refresh the UI to show the updated timestamp
+            self._populate_lists()
+                
+        except Exception as e:
+            print(f"Could not update lastEmailed for {student.file_path}: {e}")
+        
+        QMessageBox.information(self, "Done", f"Email sent to {student.student_name}.")
 
     def _term_label(self) -> str:
         year = self.year_combo.currentText()
